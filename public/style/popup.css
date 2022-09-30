@@ -1,0 +1,154 @@
+html {
+  height: fit-content;
+}
+label {
+  font-size: 1.5rem;
+}
+#pending_tickets_table {
+  width: max-content;
+  margin: 20px;
+  margin-bottom: 15px;
+}
+body { 
+  height: inherit;
+  width: max-content;
+  font-weight: normal !important;
+  font-family: Roboto !important;
+  font-size: small !important;
+  letter-spacing: 0 !important;
+  background-color: #282828;
+  border: 3px solid gold;
+}
+h3 {
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+  color: gold;
+}
+#email-form {
+  margin: 1rem;
+}
+.space-evenly-flex {
+  padding-top: 5px;
+  display: flex;
+  font-size: small;
+  justify-content: space-evenly;
+}
+
+.justify-center {
+  display: flex;
+  justify-content: center;
+}
+div.right {
+  float: right;
+  text-align: -webkit-right;
+  vertical-align: middle;
+  width: 46%;
+  margin-right: 50px;
+}
+div.price-right {
+  float: right;
+  text-align: -webkit-right;
+  vertical-align: middle;
+  width: 35%;
+  margin-right: 10px;
+}
+div.left {
+  float: left;
+  text-align: -webkit-left;
+  vertical-align: middle;
+  width: 75%;
+  margin-left: 21px;
+}
+
+input {
+  color: gold;
+}
+input:focus {
+  border-color: gold !important;
+}
+.logo {
+  width: 50%;
+}
+
+.custom_button {
+  background-color: #c89626;
+  border: 0.1rem solid #282828;
+  margin-bottom: 3px;
+  line-height: 1rem;
+  margin-top: 9px;
+  height: 31px;
+  margin-left: 23%;
+  padding: 0px 1rem;
+  width: -webkit-fill-available;
+  margin: inherit;
+}
+
+.custom_button:hover {
+  background-color: #282828;
+  border-color: #ffd700;
+}
+
+.dropbtn {
+  padding: 0px 1rem;
+}
+
+/* The container <div> - needed to position the dropdown content */
+.dropdown {
+  position: relative;
+  display: inline-block;
+  margin-bottom: -7px;
+}
+
+/* Dropdown Content (Hidden by Default) */
+.dropdown-content {
+  display: none;
+  position: absolute;
+  background-color: #f1f1f1;
+  min-width: 160px;
+  box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+  z-index: 1;
+}
+
+/* Links inside the dropdown */
+.dropdown-content a {
+  color: black;
+  padding: 12px 16px;
+  text-decoration: none;
+  display: block;
+}
+
+/* Change color of dropdown links on hover */
+.dropdown-content a:hover {background-color: #ddd;}
+
+/* Show the dropdown menu on hover */
+.dropdown:hover .dropdown-content {display: block;}
+
+/* Change the background color of the dropdown button when the dropdown content is shown */
+.dropdown:hover .dropbtn {background-color: #3e8e41;}
+
+
+.approvedRow {
+  background: greenyellow;
+  color: green;
+}
+
+.deniedRow {
+  background: darkred;
+  color: #ff006a;
+}
+.notedRow {
+  background: #b2fffa;
+  color: black;
+}
+a:hover {
+  cursor: pointer;
+}
+th, td {
+  text-align: center;
+}
+td:last-child, th:last-child {
+  padding-right: 15px !important;
+}
+td:first-child, th:first-child {
+  padding-left: 15px !important;
+}
