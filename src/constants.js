@@ -1,4 +1,4 @@
-// export const domain = 'http://127.0.0.1:8000/';
+export const domain = 'http://127.0.0.1:8000/';
 //Production environment
 // export const domain = '';
 
@@ -11,7 +11,8 @@ export const LS = {
   removeItems: (keys) => chrome.storage.local.remove(keys),
 };
 let CE_id = async () => await LS.getItem('CE_id')
-
+let minutes_interval = 30
+export const interval_check_new_job = minutes_interval*60*1000
 export const API_ENDPOINTS = {
   post_ticket_info: domain + 'api/company/updateSocialProfiles',
 };

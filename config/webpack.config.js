@@ -10,11 +10,12 @@ const config = (env, argv) =>
   merge(common, {
     entry: {
       popup: PATHS.src + '/popup.js',
-      contentScript: PATHS.src + '/contentScript.js',
+      content_Linkedin: PATHS.src + '/content_Linkedin.js',
       background: PATHS.src + '/background.js',
       api: PATHS.src + '/api.js',
     },
-    devtool: argv.mode === 'production' ? false : 'source-map',
+    devtool: 'cheap-module-source-map',
+    //devtool: argv.mode === 'production' ? false : 'source-map',
   });
 
 module.exports = config;

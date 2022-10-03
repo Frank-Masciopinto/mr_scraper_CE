@@ -2,8 +2,8 @@
 
 ## Getting started
 
-npm -v = 8.8.0
-Node.js v18.1.0
+npm -v = 8.5.0
+Node.js v16.14.2
 
 ## Installation
 npm run watch
