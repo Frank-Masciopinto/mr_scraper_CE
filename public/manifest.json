@@ -16,7 +16,7 @@
     "default_title": "Mr Scraper",
     "default_popup": "html/popup.html"
   },
-  "permissions": ["storage", "notifications", "scripting", "activeTab", "tabs"],
+  "permissions": ["storage", "clipboardRead", "clipboardWrite", "notifications", "scripting", "activeTab", "tabs"],
   "host_permissions": ["http://*/*", "*://*/*"],
   "options_ui": {
     "page": "html/options.html",

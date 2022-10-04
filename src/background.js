@@ -2,9 +2,14 @@
 import { API } from './api.js';
 import { LS, notify, interval_check_new_job } from './constants.js';
 const { v1: uuidv1 } = require('uuid');
+import undom from 'undom';
+
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log(request);
+  if (request.message == "getClipboard") {
+    sendResponse(getClipboard());
+  }
 });
 
 async function start_linkedin_worker(url) {
@@ -39,7 +44,24 @@ async function start_linkedin_worker(url) {
     }, 3000);
   });
 }
+function getClipboard() {
+  console.log('Getting clipboard...');
+  let bg = undom();
+  bg.document.body.innerHTML= ""; // clear the background page
 
+  // add a DIV, contentEditable=true, to accept the paste action
+  var helperdiv = bg.document.createElement("div");
+  helperdiv.contentEditable = true;
+  bg.appendChild(helperdiv);
+
+  navigator.clipboard
+  .readText()
+  .then(
+    (clipText) => (console.log(clipText))
+  );
+  // trigger the paste action
+  // read the clipboard contents from the helperdiv
+}
 //Periodically check for new jobs
 setInterval(async () => {
   let response = await API.check_for_new_job();
