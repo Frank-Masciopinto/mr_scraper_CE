@@ -4,8 +4,10 @@ import { LS, null_field, click, scroll_to_bottom_page } from './constants.js';
 
 console.log('Mr_Scraper - Content Script Injected');
 
-function startAutomation() {
-  let rules = [
+function startAutomation(rules) {
+  console.log('Start Automation with rules: ');
+  console.log(rules);
+  let generalRules = [
     { property: 'company_name', rule: `span[dir='ltr']`, type: 'dom' },
     {
       property: 'Headline',
@@ -59,49 +61,92 @@ function startAutomation() {
   ];
   let extracted_info = {};
   for (let i = 0; i < rules.length; i++) {
-    console.log('Rule: \n' + rules[i].rule);
-    extracted_info[rules[i].property] = document.querySelector(
-      rules[i].rule
-    ).innerText;
+    console.log('Rule: \n' + rules[i]);
+    if (rules[i].type == 'dom') {
+      console.log('Rule type: ' + rules[i].type);
+      let extracted_value = extract_querySelector(rules[i].rule);
+      console.log('Extracted value: ' + extracted_value);
+      extracted_info[rules[i].property] = extracted_value;
+    } else if (rules[i].type == 'regexp') {
+      console.log('Rule type: ' + rules[i].type);
+      let extracted_value = extract_regex(rules[i].rule);
+      console.log('Extracted value: ' + extracted_value);
+      extracted_info[rules[i].property] = extracted_value;
+    } else if (rules[i].property == 'pages_people_also_viewed') {
+      console.log('Rule name: ' + rules[i].property);
+      let extracted_value = extract_similar_pages(rules[i].rule);
+      console.log('Extracted value: ' + extracted_value);
+      extracted_info[rules[i].property] = extracted_value;
+    } else if (rules[i].property == 'company_posts') {
+      if (document.URL.includes('/posts/')) {
+        console.log('Rule name: ' + rules[i].property);
+        let extracted_value = extract_similar_pages(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else {
+        console.log('NOT on company/posts/ url, returning N/A');
+        extracted_info[rules[i].property] = null_field;
+      }
+    }
   }
   console.log('Extracted info: \n', extracted_info);
+  return extracted_info;
 }
 
 function extract_querySelector(rule) {
   let interestedElement = document.querySelector(rule);
-  if (interestedElement.tagName == 'A') {
-    return interestedElement.href;
-  } else {
-    return interestedElement.innerText;
-  }
+  if (interestedElement) {
+    if (interestedElement.tagName == 'A') {
+      return interestedElement.href;
+    } else {
+      return interestedElement.innerText;
+    }
+  } else return null_field;
 }
 function extract_regex(rule) {
-  return document.body.innerText.match(rule)[0];
+  console.log('Inside regexp extraction rule: ' + rule);
+  let doesElementExist = document.body.innerText.match(rule);
+  if (doesElementExist) return document.body.innerText.match(rule)[0];
+  else return null_field;
 }
 function extract_similar_pages(xpath) {
+  console.log('Extracting by Xpath: ', xpath);
   let all_pages = [];
-  let all_pages_people_also_viewed = document
-    .evaluate(xpath, document, null, XPathResult.FIRST_ORDERED_NODE_TYPE, null)
-    .singleNodeValue.parentElement.nextElementSibling.querySelectorAll(
-      'li > div > a'
+  let all_pages_people_also_viewed = document.evaluate(
+    xpath,
+    document,
+    null,
+    XPathResult.FIRST_ORDERED_NODE_TYPE,
+    null
+  );
+
+  if (all_pages_people_also_viewed) {
+    console.log(
+      'All pages_people_also_viewed exist, continuing with extraction'
     );
-  for (let i = 0; i < all_pages_people_also_viewed.length; i++) {
-    let singlePage = {
-      url: all_pages_people_also_viewed[i].href,
-      name: all_pages_people_also_viewed[i].querySelector(
-        '.artdeco-entity-lockup__title'
-      ).innerText,
-      followers: all_pages_people_also_viewed[i].querySelector(
-        '.artdeco-entity-lockup__caption'
-      ).innerText,
-    };
-    all_pages.push(singlePage);
-  }
-  return all_pages;
+    all_pages_people_also_viewed =
+      all_pages_people_also_viewed.singleNodeValue.parentElement.nextElementSibling.querySelectorAll(
+        'li > div > a'
+      );
+    for (let i = 0; i < all_pages_people_also_viewed.length; i++) {
+      console.log('Inside all pages loop...');
+      let singlePage = {
+        url: all_pages_people_also_viewed[i].href,
+        name: all_pages_people_also_viewed[i].querySelector(
+          '.artdeco-entity-lockup__title'
+        ).innerText,
+        followers: all_pages_people_also_viewed[i].querySelector(
+          '.artdeco-entity-lockup__caption'
+        ).innerText,
+      };
+      all_pages.push(singlePage);
+    }
+    return all_pages;
+  } else return [null_field];
 }
 
 async function extract_single_social_post(post_to_extract, extracted_posts) {
-  return new Promise(function(resolve, reject) {
+  return new Promise(function (resolve, reject) {
     console.log(post_to_extract);
     let caption = post_to_extract.querySelector('.update-components-text')
       ? post_to_extract.querySelector('.update-components-text').innerText
@@ -109,89 +154,89 @@ async function extract_single_social_post(post_to_extract, extracted_posts) {
     let number_of_reactions = post_to_extract.querySelector(
       '.social-details-social-counts__reactions-count'
     )
-      ? post_to_extract.querySelector('.social-details-social-counts__reactions-count')
-          .innerText
+      ? post_to_extract.querySelector(
+          '.social-details-social-counts__reactions-count'
+        ).innerText
       : null_field;
     let number_of_comments = post_to_extract.querySelector(
       '.social-details-social-counts__comments'
     )
       ? post_to_extract
           .querySelector('.social-details-social-counts__comments')
-          .innerText.replace(/ comments | comment/, '').match(/\d*/)[0]
+          .innerText.replace(/ comments | comment/, '')
+          .match(/\d*/)[0]
       : null_field;
     let link_to_post;
     //Open dropdown for copy post link
     click(post_to_extract.querySelector('.feed-shared-control-menu__trigger'));
     let wait_for_menu_loaded = setInterval(() => {
-      if (post_to_extract
-        .querySelector('.feed-shared-control-menu__content')
-        .querySelector('.option-share-via')) {//If menu is open than click copy link
-          console.log('CLicking copy link...');
-          click(
-            post_to_extract
-              .querySelector('.feed-shared-control-menu__content')
-              .querySelector('.option-share-via').firstElementChild
-          );
-          clearInterval(wait_for_menu_loaded);
-          setTimeout(() => {
-            navigator.clipboard.readText().then((clipText) => {
-              link_to_post = clipText;
-              extracted_posts.push({
-                caption: caption,
-                number_of_reactions: number_of_reactions,
-                number_of_comments: number_of_comments,
-                link_to_post: link_to_post,
-              });
-              resolve();
+      if (
+        post_to_extract
+          .querySelector('.feed-shared-control-menu__content')
+          .querySelector('.option-share-via')
+      ) {
+        //If menu is open than click copy link
+        console.log('CLicking copy link...');
+        click(
+          post_to_extract
+            .querySelector('.feed-shared-control-menu__content')
+            .querySelector('.option-share-via').firstElementChild
+        );
+        clearInterval(wait_for_menu_loaded);
+        setTimeout(() => {
+          navigator.clipboard.readText().then((clipText) => {
+            link_to_post = clipText;
+            extracted_posts.push({
+              caption: caption,
+              number_of_reactions: number_of_reactions,
+              number_of_comments: number_of_comments,
+              link_to_post: link_to_post,
             });
-          }, 1500);
-        }
+            resolve();
+          });
+        }, 1500);
+      }
     }, 1000);
   });
 }
 
-async function extract_social_posts(selector) {
+async function extract_social_posts() {
   console.log('Extracting social posts...');
   let all_posts = document.querySelectorAll(
     `.scaffold-finite-scroll__content > div`
   );
   let extracted_posts = [];
   for (let i = 0; i < all_posts.length; i++) {
-    await extract_single_social_post(all_posts[i], extracted_posts)
+    await extract_single_social_post(all_posts[i], extracted_posts);
   }
-  console.log("returning all_posts")
-  console.log("Number of posts Extracted: ", extracted_posts.length)
-  console.log(extracted_posts)
+  console.log('returning all_posts');
+  console.log('Number of posts Extracted: ', extracted_posts.length);
+  console.log(extracted_posts);
   return extracted_posts;
 }
 
-setTimeout(() => {
-  scroll_to_bottom_page()
-}, 3000);
-setTimeout(() => {
-  extract_social_posts('s');
-}, 5000);
-
-
 //startAutomation();
-// if (window.name == 'auto') {
-//   if (document.URL.includes("/posts/")) {
-//     scroll_to_bottom_page();
-//     setTimeout(() => {
-//       chrome.runtime.sendMessage(
-//         { title: 'What are the extraction rules?' },
-//         (res) => {
-//           startAutomation(res.rules);
-//         }
-//       );
-//     }, 3000);
-//   }
-//   else {
-//     chrome.runtime.sendMessage(
-//       { title: 'What are the extraction rules?' },
-//       (res) => {
-//         startAutomation(res.rules);
-//       }
-//     );
-//   }
-// }
+if (document.URL.includes('?CEaewtoron=12345')) {
+  if (document.URL.includes('/posts/')) {
+    setTimeout(() => {
+      scroll_to_bottom_page();
+    }, 3000);
+    setTimeout(() => {
+      chrome.runtime.sendMessage(
+        { message: 'What are the extraction rules?' },
+        (res) => {
+          startAutomation(res.rules);
+        }
+      );
+    }, 5000);
+  } else {
+    chrome.runtime.sendMessage(
+      { message: 'What are the extraction rules?' },
+      (res) => {
+        console.log('Background response: ');
+        console.log(res);
+        startAutomation(res.rules);
+      }
+    );
+  }
+}

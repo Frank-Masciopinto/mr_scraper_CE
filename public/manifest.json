@@ -27,7 +27,7 @@
       "matches": [
         "*://*/*"
       ],
-      "run_at": "document_idle",
+      "run_at": "document_end",
       "js": ["content_Linkedin.js"]
     }
   ]
