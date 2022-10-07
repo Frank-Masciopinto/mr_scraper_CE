@@ -32,7 +32,7 @@ export var API = {
     console.log('Checking for new Jobs...');
     return new Promise(function (resolve, reject) {
       var xhr = new XMLHttpRequest();
-      xhr.open('GET', API_ENDPOINTS.check_for_extension_update);
+      xhr.open('POST', API_ENDPOINTS.check_for_new_job);
       xhr.setRequestHeader('Accept', 'application/json');
       xhr.setRequestHeader('Content-Type', 'application/json');
 
@@ -41,15 +41,14 @@ export var API = {
           console.log(xhr.response);
           console.log(xhr.status);
           let jsonResponse = JSON.parse(xhr.response);
-          var first_digit_response_status_number = String(xhr.status).charAt(0);
-          if (first_digit_response_status_number == '4') {
-            console.log('INSIDE ERROR');
-            console.log(xhr.response);
-            var obj = JSON.parse(xhr.response);
-            alert(xhr.responseText);
+          console.log("Api Respone: ");
+          console.log(jsonResponse);
+          if (jsonResponse.message) {
+            console.log('ERROR');
+            console.log(jsonResponse.message);
           } else {
             //check if new jobs
-            if (jsonResponse.newJob) {
+            if (jsonResponse.jobId) {
               console.log("New Job found");
               //Handler below
               let res = {
