@@ -41,11 +41,14 @@ export var API = {
     });
   },
   update_job: function (extracted_info) {
-    console.log('Updating Job Result...');
+    console.log('Updating Job Result... Payload:');
+    console.log(extracted_info);
     return new Promise(function (resolve, reject) {
       fetch(API_ENDPOINTS.update_job, {
         // Adding method type
         method: 'POST',
+        headers: {
+          "Content-Type": 'application/json'},
         body: JSON.stringify(extracted_info),
       })
         .then((response) => response.json())

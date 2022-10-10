@@ -247,7 +247,7 @@ if (document.URL.includes('?CEaewtoron=12345')) {
       chrome.runtime.sendMessage(
         { message: 'What are the extraction rules?' },
         (res) => {
-          job_id = res.job_id;
+          job_id = res.jobId;
           extract_social_posts()
         }
       );
@@ -258,6 +258,7 @@ if (document.URL.includes('?CEaewtoron=12345')) {
       (res) => {
         console.log('Background response: ');
         console.log(res);
+        job_id = res.jobId;
         startAutomation(res.rules);
       }
     );
