@@ -46,37 +46,30 @@ export var API = {
       fetch(API_ENDPOINTS.update_job, {
         // Adding method type
         method: 'POST',
-        body: JSON.stringify(extracted_info)
+        body: JSON.stringify(extracted_info),
       })
         .then((response) => response.json())
         .then((jsonResponse) => {
           console.log('Api JsonResponse: ');
           console.log(jsonResponse);
-          if (jsonResponse.message) {
-            console.log('ERROR');
-            console.log(jsonResponse.message);
-            let res = {
-              is_there_job: false,
-            };
-            resolve(res);
-          } else {
-            //check if new jobs
-            if (jsonResponse.jobId) {
-              console.log('New Job found');
-              //Handler below
-              let res = {
-                is_there_job: true,
-                job: jsonResponse,
-              };
-              resolve(res);
-            } else {
-              console.log('No jobs found...');
-              let res = {
-                is_there_job: false,
-              };
-              resolve(res);
-            }
-          }
+          resolve('success');
+          // if (jsonResponse.message) {
+          //   console.log('ERROR');
+          //   console.log(jsonResponse.message);
+          //   resolve("failure");
+          // } else {
+          //   if (jsonResponse.message) {
+          //     console.log('Job Updated Successfully');
+          //     resolve("success");
+          //   } else {
+          //     console.log('No jobs found...');
+          //     resolve("failure");
+          //   }
+          // }
+        })
+        .catch((e) => {
+          console.log(e);
+          resolve('failure');
         });
     });
   },

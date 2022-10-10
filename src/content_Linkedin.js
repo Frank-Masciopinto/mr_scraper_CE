@@ -1,10 +1,11 @@
 'use strict';
 
+import { API } from './api.js';
 import { LS, null_field, click, scroll_to_bottom_page } from './constants.js';
 
 console.log('Mr_Scraper - Content Script Injected');
-
-function startAutomation(rules) {
+let job_id;
+async function startAutomation(rules) {
   console.log('Start Automation with rules: ');
   console.log(rules);
   let generalRules = [
@@ -60,37 +61,52 @@ function startAutomation(rules) {
     },
   ];
   let extracted_info = {};
-  for (let i = 0; i < rules.length; i++) {
-    console.log('Rule: \n' + rules[i]);
-    if (rules[i].type == 'dom') {
-      console.log('Rule type: ' + rules[i].type);
-      let extracted_value = extract_querySelector(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].type == 'regexp') {
-      console.log('Rule type: ' + rules[i].type);
-      let extracted_value = extract_regex(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].property == 'pages_people_also_viewed') {
-      console.log('Rule name: ' + rules[i].property);
-      let extracted_value = extract_similar_pages(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].property == 'company_posts') {
-      if (document.URL.includes('/posts/')) {
+  let status;
+  let uuid = await LS.getItem("uuid");
+  try {
+    for (let i = 0; i < rules.length; i++) {
+      console.log('Rule: \n' + rules[i]);
+      if (rules[i].type == 'dom') {
+        console.log('Rule type: ' + rules[i].type);
+        let extracted_value = extract_querySelector(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].type == 'regexp') {
+        console.log('Rule type: ' + rules[i].type);
+        let extracted_value = extract_regex(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].property == 'pages_people_also_viewed') {
         console.log('Rule name: ' + rules[i].property);
         let extracted_value = extract_similar_pages(rules[i].rule);
         console.log('Extracted value: ' + extracted_value);
         extracted_info[rules[i].property] = extracted_value;
-      } else {
-        console.log('NOT on company/posts/ url, returning N/A');
-        extracted_info[rules[i].property] = null_field;
+      } else if (rules[i].property == 'company_posts') {
+        if (document.URL.includes('/posts/')) {
+          console.log('Rule name: ' + rules[i].property);
+          let extracted_value = extract_similar_pages(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        } else {
+          console.log('NOT on company/posts/ url, returning N/A');
+          extracted_info[rules[i].property] = null_field;
+        }
       }
     }
+    status = "success";
+  }
+  catch (e) {
+    console.log('ERROR: ' + e.message);
+    status = "error";
   }
   console.log('Extracted info: \n', extracted_info);
-  return extracted_info;
+  let payload = {
+    "uuid": await LS.getItem('CE_uuid'),
+    "job_id": job_id,
+    "response": extracted_info,
+    "status": status
+  };
+  API.update_job(payload);
 }
 
 function extract_querySelector(rule) {
@@ -212,7 +228,13 @@ async function extract_social_posts() {
   console.log('returning all_posts');
   console.log('Number of posts Extracted: ', extracted_posts.length);
   console.log(extracted_posts);
-  return extracted_posts;
+  let payload = {
+    "uuid": await LS.getItem('CE_uuid'),
+    "job_id": job_id,
+    "response": extracted_posts,
+    "status": "success"
+  };
+  API.update_job(payload);
 }
 
 //startAutomation();
@@ -225,7 +247,8 @@ if (document.URL.includes('?CEaewtoron=12345')) {
       chrome.runtime.sendMessage(
         { message: 'What are the extraction rules?' },
         (res) => {
-          startAutomation(res.rules);
+          job_id = res.job_id;
+          extract_social_posts()
         }
       );
     }, 5000);

@@ -11,7 +11,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.message == 'What are the extraction rules?') {
     console.log("currentJob:")
     console.log(currentJob);
-    sendResponse({ rules: JSON.parse(currentJob.rules)});
+    sendResponse({ rules: JSON.parse(currentJob.rules), jobId: currentJob.jobId});
   }
 });
 
