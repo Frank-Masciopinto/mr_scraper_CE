@@ -35,7 +35,7 @@ export function scroll_to_bottom_page() {
     top: 10000,
     left: 100,
     behavior: 'smooth'
-});
+  });
 }
 
 let CE_id = async () => await LS.getItem('CE_id')
@@ -64,3 +64,26 @@ export var notifications = {
     notify(title, message, iconUrl);
   },
 };
+
+
+export function scroll_to_last_job(selector, selectorOffset=".") {
+  let jobScroll = setInterval(function(){
+    var containerElements = document.querySelectorAll(selectorOffset+selector);
+    var paginationElement =  document.querySelector(".jobs-search-results-list__pagination");
+    var lastElement = containerElements[containerElements.length-1];
+    lastElement.scrollIntoView();
+    for (var i = 0; i < containerElements.length; i++) {
+      var title_ele = containerElements[i].querySelector('.job-card-list__title');
+      if (title_ele !=null){
+        if (title_ele.innerText.length == 0)
+          containerElements[i].scrollIntoView();
+      }
+    }
+
+    if (paginationElement !=null){
+      // clear the job scroll interval
+      paginationElement.scrollIntoView();
+      clearInterval(jobScroll);
+    }
+  },40);
+}
