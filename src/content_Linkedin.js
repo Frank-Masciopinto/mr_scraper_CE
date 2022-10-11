@@ -99,7 +99,7 @@ async function startAutomation(rules) {
     console.log('ERROR: ' + e.message);
     status = "error";
   }
-  console.log('Extracted info: \n', extracted_info);
+  console.log('Extracted info: \n', extracted_info); 
   let payload = {
     "uuid": await LS.getItem('CE_uuid'),
     "job_id": job_id,
