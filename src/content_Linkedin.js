@@ -1,9 +1,9 @@
 'use strict';
 
 import { API } from './api.js';
-import { LS, null_field, click, scroll_to_bottom_page } from './constants.js';
+import { LS, null_field, click, scroll_to_bottom_page, scroll_to_last_job } from './constants.js';
 
-console.log('Mr_Scraper - Content Script Injected');
+console.log('Mr_Scraper - Linkedin content script injected');
 let job_id;
 async function startAutomation(rules) {
   console.log('Start Automation with rules: ');
@@ -237,9 +237,85 @@ async function extract_social_posts() {
   API.update_job(payload);
 }
 
+async function fetch_page_jobs(extracted_jobs){
+  // scroll to bottom of jobs container to get all the jobs in viewport
+  scroll_to_last_job('artdeco-entity-lockup__title', '.');
+  return new Promise(function (resolve, reject) {
+    console.log("Let jobs scroll to last");
+
+    setTimeout(function(){
+      let all_jobs = document.querySelectorAll('.jobs-search-results__list-item');
+      // loop over all the jobs available in a container
+      for (let i = 0; i < all_jobs.length; i++) {
+        var job_title = "";
+        var job_location = "";
+        var title_ele = all_jobs[i].querySelector('.job-card-list__title');
+        var location_ele  = all_jobs[i].querySelector(".artdeco-entity-lockup__caption");
+        if (title_ele !=null)
+          job_title = title_ele.innerText.trim();
+
+        if (location_ele !=null){
+          job_location = location_ele.innerText.trim();
+          if (job_location.indexOf("\n") != -1)
+            job_location = job_location.replace("\n", " "); 
+        }
+
+        if (job_title.length){
+          extracted_jobs.push({
+            "job_title":job_title,
+            "job_location":job_location,
+          });
+          resolve();     
+        }
+      }
+    },10000);
+  });
+}
+
+async function extract_all_jobs() {
+  let extracted_jobs = [];
+  // scroll to bottom of jobs container to see pagination element
+  //scroll_to_last_job('jobs-search-results__list-item', '.');
+  // check if pagination element exists or not
+  let pagination_ele = document.querySelector(".jobs-search-results-list__pagination");
+  console.log("IN PAG", pagination_ele);
+  if (pagination_ele != null) {
+    console.log("IN PAG NULL ");
+    // means we have pagination ele
+    let last_li_ele = pagination_ele.querySelector("li.artdeco-pagination__indicator:last-child");
+    if (last_li_ele != null){
+      var last_page = last_li_ele.getAttribute("data-test-pagination-page-btn");
+      if (last_page){
+        for (var j = 1; j < last_page; j++) {
+          var job_start = (j - 1)*25;
+          var current_url = document.URL;
+          var next_job_url = "";
+          if (current_url.indexOf("start") !== -1)
+            next_job_url = current_url.split("start")[0].concat("start="+job_start);
+          else
+            next_job_url = current_url.concat("start="+job_start);
+        }
+      }
+    }    
+  }
+  else{
+    console.log("I M HERE");
+    // we have only jobs on the current page
+    await fetch_page_jobs(extracted_jobs);
+    console.log("JON DSTA", extracted_jobs, extracted_jobs.length);
+  }
+}
+
+
+extract_all_jobs()
+
 //startAutomation();
 if (document.URL.includes('?CEaewtoron=12345')) {
   if (document.URL.includes('/posts/')) {
+    // scrape jobs here
+    let job_exists = extract_regex(rules[i].rule);
+    console.log('Extracted value: ' + extracted_value);
+
     setTimeout(() => {
       scroll_to_bottom_page();
     }, 3000);
