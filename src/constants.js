@@ -35,7 +35,7 @@ export function scroll_to_bottom_page() {
     top: 10000,
     left: 100,
     behavior: 'smooth'
-});
+  });
 }
 
 let CE_id = async () => await LS.getItem('CE_id')
@@ -64,3 +64,62 @@ export var notifications = {
     notify(title, message, iconUrl);
   },
 };
+
+function isInViewport(element) {
+  if (element ==null)
+    return false
+
+  const rect = element.getBoundingClientRect();
+  return (
+      rect.top >= 0 &&
+      rect.left >= 0 &&
+      rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
+      rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+  );
+}
+export function scroll_to_last_job(selector, selectorOffset=".") {
+  let jobScroll = setInterval(function(){
+    var containerElements = document.querySelectorAll(selectorOffset+selector);
+    var paginationElement =  document.querySelector(".jobs-search-results-list__pagination");
+    var seeMoreElement =  document.querySelector(".occludable-update");
+    var lastElement = containerElements[containerElements.length-1];
+    //lastElement.scrollIntoView();
+    for (var i = 0; i < containerElements.length; i++) {
+      var title_ele = containerElements[i].querySelector('.job-card-list__title');
+      //console.log("TE", title_ele);
+      if (title_ele !=null){
+        //console.log("TE INNER", title_ele.innerText);
+        if (title_ele.innerText == ""){
+          console.log("HERE in missing title...");
+          containerElements[i].scrollIntoView();
+        }else{
+          let currentEleBoundary =containerElements[i].getBoundingClientRect();
+          const y = currentEleBoundary.top + currentEleBoundary.height*3;
+          console.log("ELSE", currentEleBoundary, y, window.pageYOffset, document.body.scrollTop);
+          window.scrollTo({
+            top: y,
+            left: currentEleBoundary.left,
+            right: currentEleBoundary.right,
+            behavior: 'smooth'
+          });
+          // scroll
+          //containerElements[i].nextSibling.scrollIntoView();
+        }
+      }
+    }
+
+    const page_result = isInViewport(paginationElement);
+    const see_more_result = isInViewport(seeMoreElement);
+
+    if (paginationElement){
+      console.log("paginationElement", page_result);
+      // clear the job scroll interval
+      clearInterval(jobScroll);
+    }
+    console.log("seeMORERESULT", see_more_result);
+    /*if(see_more_result){
+      // clear the job scroll interval
+      //clearInterval(jobScroll);      
+    }*/
+  },500);
+}
