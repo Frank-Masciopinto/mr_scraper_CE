@@ -12,16 +12,20 @@ window.onload = function () {
   var bodyList = document.querySelector('body');
   var observer = new MutationObserver(function (mutations) {
     mutations.forEach(function (mutation) {
-      if (oldHref != document.location.href && !oldHref.includes("?CEaewtoron=12345")) {
+      if (
+        oldHref != document.location.href &&
+        !oldHref.includes('?CEaewtoron=12345')
+      ) {
         oldHref = document.location.href;
-        console.log("Previous URL doesnt have parameters");
+        console.log('Previous URL doesnt have parameters');
         if (document.URL.includes('/jobs/search/')) {
           let waitPageLoad = setInterval(() => {
-            if (document.querySelector(".jobs-search-results-list")) {
+            if (document.querySelector('.jobs-search-results-list')) {
               chrome.runtime.sendMessage(
                 { message: 'What are the extraction rules?' },
                 (res) => {
-                  if (res) {//If background waiting for extraction
+                  if (res) {
+                    //If background waiting for extraction
                     console.log('ASked for Job Id to background... Repsonse: ');
                     console.log(res.jobId);
                     job_id = res.jobId;
@@ -29,12 +33,12 @@ window.onload = function () {
                   }
                 }
               );
-            clearInterval(waitPageLoad);
+              clearInterval(waitPageLoad);
             }
           }, 2000);
         }
       } else if (oldHref != document.location.href) {
-        console.log("Mutation has different url from previous one...");
+        console.log('Mutation has different url from previous one...');
         oldHref = document.location.href;
       }
     });
@@ -124,6 +128,11 @@ async function startAutomation(rules) {
         let extracted_value = extract_similar_pages(rules[i].rule);
         console.log('Extracted value: ' + extracted_value);
         extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].property == 'pages_people_also_follow') {
+        console.log('Rule name: ' + rules[i].property);
+        let extracted_value = extract_similar_pages(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
       } else if (rules[i].property == 'company_posts') {
         if (document.URL.includes('/posts/')) {
           console.log('Rule name: ' + rules[i].property);
@@ -148,7 +157,9 @@ async function startAutomation(rules) {
     response: extracted_info,
     status: status,
   };
-  API.update_job(payload).then(window.close());
+  API.update_job(payload).then(() => {
+    notify_background_extraction_completed();
+  });
 }
 
 function extract_querySelector(rule) {
@@ -206,6 +217,12 @@ function extract_similar_pages(xpath) {
 async function extract_single_social_post(post_to_extract, extracted_posts) {
   return new Promise(function (resolve, reject) {
     console.log(post_to_extract);
+    let post_type;
+    if (post_to_extract.querySelector("iframe")) post_type = 'slider';
+    else if (post_to_extract.querySelector("video")) post_type = 'video';
+    else if (post_to_extract.querySelector(".update-components-image__container")) post_type = 'image';
+    else if (post_to_extract.querySelector(".feed-shared-article__link-container")) post_type = 'link';
+    else if (post_to_extract.querySelector(".update-components-poll")) post_type = 'poll';
     let caption = post_to_extract.querySelector('.update-components-text')
       ? post_to_extract.querySelector('.update-components-text').innerText
       : null_field;
@@ -249,6 +266,7 @@ async function extract_single_social_post(post_to_extract, extracted_posts) {
               number_of_reactions: number_of_reactions,
               number_of_comments: number_of_comments,
               link_to_post: link_to_post,
+              post_type: post_type,
             });
             resolve();
           });
@@ -265,7 +283,10 @@ async function extract_social_posts() {
   );
   let extracted_posts = [];
   for (let i = 0; i < all_posts.length; i++) {
-    await extract_single_social_post(all_posts[i], extracted_posts);
+    if (!all_posts[i].querySelector('.update-components-promo')) {
+      //If its not an ad
+      await extract_single_social_post(all_posts[i], extracted_posts);
+    }
   }
   console.log('returning all_posts');
   console.log('Number of posts Extracted: ', extracted_posts.length);
@@ -276,7 +297,9 @@ async function extract_social_posts() {
     response: extracted_posts,
     status: 'success',
   };
-  API.update_job(payload).then(window.close());
+  API.update_job(payload).then(() => {
+    notify_background_extraction_completed();
+  });
 }
 
 async function scroll_to_last_job() {
@@ -298,6 +321,10 @@ async function scroll_to_last_job() {
       resolve();
     }, 5000);
   });
+}
+
+function notify_background_extraction_completed() {
+  chrome.runtime.sendMessage({ message: 'Extraction Completed' }, (res) => {});
 }
 
 async function fetch_page_jobs(extracted_jobs) {
@@ -370,8 +397,9 @@ async function extract_all_jobs() {
     response: extracted_jobs,
     status: status,
   };
-  API.update_job(payload).then(window.close());
-
+  API.update_job(payload).then(() => {
+    notify_background_extraction_completed();
+  });
 }
 //startAutomation();
 if (document.URL.includes('?CEaewtoron=12345')) {
@@ -388,12 +416,14 @@ if (document.URL.includes('?CEaewtoron=12345')) {
         }
       );
     }, 5000);
-  } else if (document.URL.includes('/jobs/') && !document.URL.includes('currentJobId')) {
+  } else if (
+    document.URL.includes('/jobs/') &&
+    !document.URL.includes('currentJobId')
+  ) {
     //Open All Jobs page for extraction
     try {
-      document.querySelector('a[href*="/jobs/search/?"]').click()
-    }
-    catch {
+      document.querySelector('a[href*="/jobs/search/?"]').click();
+    } catch {
       chrome.runtime.sendMessage(
         { message: 'What are the extraction rules?' },
         async (res) => {
@@ -404,9 +434,11 @@ if (document.URL.includes('?CEaewtoron=12345')) {
             uuid: await LS.getItem('CE_uuid'),
             job_id: job_id,
             response: [],
-            status: "Failure - No Jobs Found",
+            status: 'Failure - No Jobs Found',
           };
-          API.update_job(payload).then(window.close());
+          API.update_job(payload).then(() => {
+            notify_background_extraction_completed();
+          });
         }
       );
     }

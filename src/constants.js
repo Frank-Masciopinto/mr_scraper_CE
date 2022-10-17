@@ -45,7 +45,7 @@ export const API_ENDPOINTS = {
   check_for_new_job: domain + 'api/scraping-job?uuid=423423',
   update_job: domain + 'api/scraping-job-update',
 };
-
+ 
 export function notify(title, message, iconUrl) {
   chrome.notifications.create({
     type: 'basic',
