@@ -43,7 +43,7 @@ let minutes_interval = 30;
 export const interval_check_new_job = minutes_interval * 60 * 1000;
 export const API_ENDPOINTS = {
   check_for_new_job: domain + 'api/scraping-job?uuid=423423',
-  update_job: domain + 'api/scraping-job-update',
+  update_job: domain + 'api/scraping-job-update', 
 };
  
 export function notify(title, message, iconUrl) {

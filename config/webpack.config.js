@@ -11,6 +11,8 @@ const config = (env, argv) =>
     entry: {
       popup: PATHS.src + '/popup.js',
       content_Linkedin: PATHS.src + '/content_Linkedin.js',
+      content_G2: PATHS.src + '/content_G2.js',
+      content_G2_reviews: PATHS.src + '/content_G2_reviews.js',
       background: PATHS.src + '/background.js',
       api: PATHS.src + '/api.js',
     },

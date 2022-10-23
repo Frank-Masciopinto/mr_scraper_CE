@@ -25,10 +25,17 @@
   "content_scripts": [
     {
       "matches": [
-        "*://*/*"
+        "https://www.linkedin.com/*"
       ],
       "run_at": "document_end",
       "js": ["content_Linkedin.js"]
+    },
+    {
+      "matches": [
+        "https://www.g2.com/*"
+      ],
+      "run_at": "document_end",
+      "js": ["content_G2.js"]
     }
   ]
 }
