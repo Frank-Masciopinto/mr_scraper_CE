@@ -1,13 +1,12 @@
 'use strict';
 
-import { API } from './api.js';
 import { LS, null_field, click, scroll_to_bottom_page } from './constants.js';
 
 console.log('💪Mr_Scraper - G2 content script injected💪');
 let job_id;
-
-var oldHref = document.location.href;
-
+let all_reviews_STATE = [];
+let all_reviews_pages_extracted = false;
+let last_page_to_scrap;
 // window.onload = function () {
 //   var bodyList = document.querySelector('body');
 //   var observer = new MutationObserver(function (mutations) {
@@ -51,6 +50,40 @@ var oldHref = document.location.href;
 
 //   observer.observe(bodyList, config);
 // };
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  console.log(request);
+  if (request.message == 'Next Review Page Extracted') {
+    all_reviews_STATE = [...all_reviews_STATE, ...request.reviews];
+    console.log('Next Review Page Extracted... 💻Updating state...');
+    console.log(all_reviews_STATE);
+    if (request.page_number == last_page_to_scrap){
+      all_reviews_pages_extracted = true;
+      sendResponse("Last Page Extracted, Close window")
+    }
+    else sendResponse('Done');
+  }
+});
+
+// async function wait_for_all_pages_extractions() {
+//   last_page_to_scrap = parseInt(
+//     document
+//       .querySelector('div[data-poison-omit] > ul > li:last-child > a')
+//       .href.match(/(?<=\?page\=).*/)
+//   );
+//   return new Promise(function (resolve, reject) {
+//     let wait_for_all_pages_extractions = setInterval(() => {
+//       if (all_reviews_pages_extracted) {
+//         console.log('📪 All pages have been extracted');
+//         clearInterval(wait_for_all_pages_extractions);
+//         resolve(true);
+//       }
+//       else {
+//         console.log('🕒 Still waiting for all pages to be extracted 🕒');
+//       }
+//     }, 3000);
+//   });
+// }
 
 async function startAutomation(rules) {
   console.log('Start Automation with rules: ');
@@ -128,7 +161,7 @@ async function startAutomation(rules) {
     },
     {
       property: 'official_downloads',
-      rule: `div.cell.text-center > [data-event-options]`,
+      rule: `div.cell.text-center > a`,
       type: 'multiple_dom',
     },
     {
@@ -142,6 +175,7 @@ async function startAutomation(rules) {
       type: 'multiple_dom',
     },
   ];
+  console.log(JSON.stringify(rules));
   let extracted_info = {};
   let status;
   let uuid = await LS.getItem('uuid');
@@ -201,12 +235,21 @@ async function startAutomation(rules) {
   //   status = 'failure';
   // }
   console.log('Extracted info: \n', extracted_info);
+  console.log('Waiting for all reviews pages extraction...');
   let payload = {
     uuid: await LS.getItem('CE_uuid'),
     job_id: job_id,
     response: extracted_info,
-    status: status,
+    status: status
   };
+  chrome.runtime.sendMessage(
+    {
+      message: 'Company Info on First Page Extracted',
+      extractedInfo: payload,
+    },
+    (res) => {
+      // window.close()
+    })
   // API.update_job(payload).then(() => {
   //   notify_background_extraction_completed();
   // });
@@ -333,42 +376,17 @@ function extract_official_downloads(rule) {
   return all_official_downloads;
 }
 
-async function scroll_to_last_job() {
-  return new Promise(function (resolve, reject) {
-    //Scroll to last job
-    document.querySelector('.jobs-search-results-list').scrollBy({
-      top: 10000,
-      left: 100,
-      behavior: 'smooth',
-    });
-    setTimeout(() => {
-      document.querySelector('.jobs-search-results-list').scrollBy({
-        top: 10000,
-        left: 100,
-        behavior: 'smooth',
-      });
-    }, 2000);
-    setTimeout(() => {
-      resolve();
-    }, 5000);
-  });
-}
 
-function notify_background_extraction_completed() {
-  chrome.runtime.sendMessage({ message: 'Extraction Completed' }, (res) => {});
-}
-
-startAutomation('test');
 if (document.URL.includes('?CEaewtoron=12345')) {
-  if (document.URL.includes('/reviews')) {
-    //open all reviews page for extraction
-    window.open(document.URL, "scrape_all_reviews")
-    chrome.runtime.sendMessage(
-      { message: 'What are the extraction rules?' },
-      (res) => {
-        job_id = res.jobId;
-        startAutomation();
-      }
-    );
-  }
+  //open all reviews page for extraction
+  //window.open(document.URL.replace('?CEaewtoron=12345', ""), 'scrape_all_reviews');
+  chrome.runtime.sendMessage(
+    { message: 'What are the extraction rules?' },
+    (res) => {
+      console.log("Background response for jobs:");
+      console.log(res);
+      job_id = res.jobId;
+      startAutomation(res.rules);
+    }
+  );
 }
