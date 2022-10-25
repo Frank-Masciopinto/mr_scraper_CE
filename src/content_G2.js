@@ -57,11 +57,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     all_reviews_STATE = [...all_reviews_STATE, ...request.reviews];
     console.log('Next Review Page Extracted... 💻Updating state...');
     console.log(all_reviews_STATE);
-    if (request.page_number == last_page_to_scrap){
+    if (request.page_number == last_page_to_scrap) {
       all_reviews_pages_extracted = true;
-      sendResponse("Last Page Extracted, Close window")
-    }
-    else sendResponse('Done');
+      sendResponse('Last Page Extracted, Close window');
+    } else sendResponse('Done');
   }
 });
 
@@ -84,7 +83,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 //     }, 3000);
 //   });
 // }
-
+startAutomation('t');
 async function startAutomation(rules) {
   console.log('Start Automation with rules: ');
   console.log(rules);
@@ -174,6 +173,21 @@ async function startAutomation(rules) {
       rule: `a[href*="/survey_responses/"] > img.x-deferred-image-initialized`,
       type: 'multiple_dom',
     },
+    {
+      property: 'top_industries_represented',
+      rule: `h5 + div[data-chart-doughnut-options]`,
+      type: 'multiple_dom',
+    },
+    {
+      property: 'user_ratings',
+      rule: `div.grid-y`,
+      type: 'multiple_dom',
+    },
+    {
+      property: 'categories_on_G2',
+      rule: `div[data-test-id="product"]`,
+      type: 'multiple_dom',
+    },
   ];
   console.log(JSON.stringify(rules));
   let extracted_info = {};
@@ -227,6 +241,24 @@ async function startAutomation(rules) {
       let extracted_value = extract_video_reviews(rules[i].rule);
       console.log('Extracted value: ' + extracted_value);
       extracted_info[rules[i].property] = extracted_value;
+    } else if (rules[i].property == 'top_industries_represented') {
+      console.log('Rule name: ' + rules[i].property);
+      let extracted_value = extract_top_industries_represented(rules[i].rule);
+      console.log('Extracted value: ' + extracted_value);
+      extracted_info[rules[i].property] = extracted_value;
+    } else if (rules[i].property == 'categories_on_G2') {
+      console.log('Rule name: ' + rules[i].property);
+      let extracted_value = extract_categories_on_G2(rules[i].rule);
+      console.log('Extracted value: ' + extracted_value);
+      extracted_info[rules[i].property] = extracted_value;
+    } else if (rules[i].property == 'user_ratings') {
+      console.log('Rule name: ' + rules[i].property);
+      await click(document.querySelector(rules[i].rule));
+      setTimeout(() => {
+        let extracted_value = extract_user_ratings(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      }, 500);
     }
   }
   status = 'success';
@@ -240,7 +272,7 @@ async function startAutomation(rules) {
     uuid: await LS.getItem('CE_uuid'),
     job_id: job_id,
     response: extracted_info,
-    status: status
+    status: status,
   };
   chrome.runtime.sendMessage(
     {
@@ -249,7 +281,8 @@ async function startAutomation(rules) {
     },
     (res) => {
       // window.close()
-    })
+    }
+  );
   // API.update_job(payload).then(() => {
   //   notify_background_extraction_completed();
   // });
@@ -375,7 +408,56 @@ function extract_official_downloads(rule) {
   }
   return all_official_downloads;
 }
+function extract_top_industries_represented(rule) {
+  let all_elements = document
+    .querySelector(rule)
+    .parentElement.querySelectorAll('div.d-f.jc-sb');
+  let top_industries_represented = [];
+  for (let i = 0; i < all_elements.length; i++) {
+    let title = all_elements[i].childNodes[0].innerText;
+    let number = all_elements[i].childNodes[1].innerText;
+    top_industries_represented.push({
+      title: title,
+      number: number,
+    });
+  }
+  return top_industries_represented;
+}
+function extract_user_ratings(rule) {
+  let all_elements = document.querySelector(rule).querySelectorAll('div.cell');
+  let top_industries_represented = [];
+  for (let i = 0; i < all_elements.length; i++) {
+    let chart_rating = all_elements[i].querySelector(
+      'div.charts--doughnut__reviews'
+    ).innerText;
+    let all_text = all_elements[i].querySelector('.small-7').innerText;
+    let title = all_text.split('\n')[0];
+    let category = all_elements[i]
+      .querySelector('.small-7')
+      .innerText.split('\n')[1]
+      .split('Average:')[0];
+    let average_rating = all_elements[i]
+      .querySelector('.small-7')
+      .innerText.split('\n')[1]
+      .split('Average:')[1];
 
+    top_industries_represented.push({
+      title: title,
+      chart_rating: chart_rating,
+      category: category,
+      average_rating: average_rating,
+    });
+  }
+  return top_industries_represented;
+}
+function extract_categories_on_G2(rule) {
+  let all_elements = document.querySelector(rule).childNodes;
+  let top_industries_represented = [];
+  for (let i = 0; i < all_elements.length; i++) {
+    top_industries_represented.push(all_elements[i].innerText);
+  }
+  return top_industries_represented;
+}
 
 if (document.URL.includes('?CEaewtoron=12345')) {
   //open all reviews page for extraction
@@ -383,7 +465,7 @@ if (document.URL.includes('?CEaewtoron=12345')) {
   chrome.runtime.sendMessage(
     { message: 'What are the extraction rules?' },
     (res) => {
-      console.log("Background response for jobs:");
+      console.log('Background response for jobs:');
       console.log(res);
       job_id = res.jobId;
       startAutomation(res.rules);
