@@ -6,11 +6,12 @@ const { v1: uuidv1 } = require('uuid');
 let currentJob;
 let all_reviews_STATE = [];
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
+  console.log("💌 Message Received 💌")
   console.log(request);
   if (request.message == 'What are the extraction rules?') {
     console.log('currentJob:');
     console.log(currentJob);
-    sendResponse({
+    sendResponse({ 
       rules: JSON.parse(currentJob.rules),
       jobId: currentJob.jobId,
     });
@@ -18,6 +19,24 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     await LS.setItem('is extraction completed?', true);
     sendResponse('Done');
     chrome.tabs.remove(sender.tab.id);
+  } else if (request.message == 'Pricing Extracted') {
+    console.log("👉updating extracted info state with G2 Pricing information")
+    await LS.setItem('Pricing Extracted', true);
+    let company_extracted_info = await LS.getItem('Company Extracted Info');
+    company_extracted_info.response.pricing_G2 = request.pricingG2;
+    console.log(company_extracted_info);
+    await LS.setItem('Company Extracted Info', company_extracted_info)
+    //chrome.tabs.remove(sender.tab.id);
+    sendResponse('Done');
+  } else if (request.message == 'Features Extracted') {
+    console.log("👉updating extracted info state with G2 Features information")
+    await LS.setItem('Features Extracted', true);
+    let company_extracted_info = await LS.getItem('Company Extracted Info');
+    company_extracted_info.response.features = request.features;
+    console.log(company_extracted_info);
+    await LS.setItem('Company Extracted Info', company_extracted_info)
+    //chrome.tabs.remove(sender.tab.id);
+    sendResponse('Done');
   } else if (request.message == 'Next Review Page Extracted') {
     all_reviews_STATE = [...all_reviews_STATE, ...request.reviews];
     console.log('Updating review state...');
@@ -35,6 +54,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   } else if (request.message == 'Company Info on First Page Extracted') {
     console.log('Setting up first extracted info...');
     await LS.setItem('Company Extracted Info', request.extractedInfo);
+    //check if one of the rules is pricing than open the pricing page
   }
 });
 

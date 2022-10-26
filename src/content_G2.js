@@ -83,7 +83,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 //     }, 3000);
 //   });
 // }
-startAutomation('t');
 async function startAutomation(rules) {
   console.log('Start Automation with rules: ');
   console.log(rules);
@@ -188,6 +187,21 @@ async function startAutomation(rules) {
       rule: `div[data-test-id="product"]`,
       type: 'multiple_dom',
     },
+    {
+      property: 'top_rated_alternatives',
+      rule: `div[class="paper paper--white paper--nestable paper--box"] > a`,
+      type: 'multiple_dom',
+    },
+    {
+      property: 'pricing_G2',
+      rule: `tbody[class="editions__tbody"] > tr`,
+      type: 'multiple_dom',
+    },
+    {
+      property: 'features',
+      rule: `div[class="grid-x grid-margin-x"]`,
+      type: 'multiple_dom',
+    },
   ];
   console.log(JSON.stringify(rules));
   let extracted_info = {};
@@ -254,11 +268,14 @@ async function startAutomation(rules) {
     } else if (rules[i].property == 'user_ratings') {
       console.log('Rule name: ' + rules[i].property);
       await click(document.querySelector(rules[i].rule));
-      setTimeout(() => {
-        let extracted_value = extract_user_ratings(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
-      }, 500);
+      let extracted_value = await extract_user_ratings(rules[i].rule);
+      console.log('Extracted value: ' + extracted_value);
+      extracted_info[rules[i].property] = extracted_value;
+    } else if (rules[i].property == 'top_rated_alternatives') {
+      console.log('Rule name: ' + rules[i].property);
+      let extracted_value = await extract_top_rated_alternatives(rules[i].rule);
+      console.log('Extracted value: ' + extracted_value);
+      extracted_info[rules[i].property] = extracted_value;
     }
   }
   status = 'success';
@@ -267,7 +284,6 @@ async function startAutomation(rules) {
   //   status = 'failure';
   // }
   console.log('Extracted info: \n', extracted_info);
-  console.log('Waiting for all reviews pages extraction...');
   let payload = {
     uuid: await LS.getItem('CE_uuid'),
     job_id: job_id,
@@ -283,10 +299,24 @@ async function startAutomation(rules) {
       // window.close()
     }
   );
-  // API.update_job(payload).then(() => {
-  //   notify_background_extraction_completed();
-  // });
-  console.log(payload);
+  check_if_pricing_and_features_are_needed(rules);
+}
+
+function check_if_pricing_and_features_are_needed(rules) {
+  if (rules.some((e) => e.property === 'pricing_G2')) {
+    let pricingURL = document.URL.replace('/reviews', '/pricing').replace(
+      '?CEaewtoron=12345',
+      ''
+    );
+    window.open(pricingURL, 'extract_pricingG2');
+  }
+  if (rules.some((e) => e.property === 'features')) {
+    let pricingURL = document.URL.replace('/reviews', '/features').replace(
+      '?CEaewtoron=12345',
+      ''
+    );
+    window.open(pricingURL, 'extract_features');
+  }
 }
 
 function extract_querySelector(rule) {
@@ -313,7 +343,19 @@ function extract_regex_innerhtml(rule) {
   if (doesElementExist) return doesElementExist[0];
   else return null_field;
 }
-
+function scrape_review_stars(review_element) {
+  let old_stars = parseInt(
+    review_element
+      .querySelector('.stars')
+      .getAttribute('class')
+      .split(' ')[2]
+      .match(/(?<=stars-).*/)[0]
+  );
+  //calculate new range for stars
+  let OldRange = 10 - 1;
+  let NewRange = 5 - 1;
+  return (((old_stars - 1) * NewRange) / OldRange + 1).toFixed(1);
+}
 function extract_average_rating(rule) {
   console.log('Inside extract_average_rating... extraction rule: ' + rule);
   let doesElementExist = document.querySelector(rule);
@@ -423,8 +465,11 @@ function extract_top_industries_represented(rule) {
   }
   return top_industries_represented;
 }
-function extract_user_ratings(rule) {
-  let all_elements = document.querySelector(rule).querySelectorAll('div.cell');
+async function extract_user_ratings(rule) {
+  let all_elements = document
+    .querySelector(rule)
+    .querySelectorAll('div[class="cell"]');
+  console.log('Number of elements: ' + all_elements.length);
   let top_industries_represented = [];
   for (let i = 0; i < all_elements.length; i++) {
     let chart_rating = all_elements[i].querySelector(
@@ -452,23 +497,164 @@ function extract_user_ratings(rule) {
 }
 function extract_categories_on_G2(rule) {
   let all_elements = document.querySelector(rule).childNodes;
+  console.log('Number of elements: ' + all_elements.length);
   let top_industries_represented = [];
   for (let i = 0; i < all_elements.length; i++) {
-    top_industries_represented.push(all_elements[i].innerText);
+    top_industries_represented.push({
+      link: all_elements[i].firstElementChild.href,
+      name: all_elements[i].innerText,
+    });
   }
   return top_industries_represented;
 }
 
-if (document.URL.includes('?CEaewtoron=12345')) {
+function extract_top_rated_alternatives(rule) {
+  let all_elements = document.querySelectorAll(rule);
+  console.log('Number of elements: ' + all_elements.length);
+  let top_rated_alternatives = [];
+  for (let i = 0; i < all_elements.length; i++) {
+    let stars = scrape_review_stars(all_elements[i]);
+    top_rated_alternatives.push({
+      company_name:
+        all_elements[i].querySelector('.col-2').firstElementChild.innerText,
+      score: stars,
+      avatar_image_link: all_elements[i].querySelector('img').src,
+    });
+  }
+  return top_rated_alternatives;
+}
+
+function extract_pricingG2(rule) {
+  let date_of_last_update = document.querySelector(
+    'div[class="text-tiny"]'
+  ).innerText.match(/(?<=Pricing information was last updated on).*/)[0];
+  let free_trial_available = document.querySelector(
+    'svg[class="color-success mr-4th icon-checkmark-circle nessy-only"]'
+  ) ? true : false;
+  let all_elements = document.querySelectorAll(rule);
+  console.log('Number of elements: ' + all_elements.length);
+  let pricingG2 = [];
+  for (let i = 0; i < all_elements.length; i++) {
+    let all_features_elements = all_elements[i].querySelectorAll('ul > li');
+    console.log('All features elements: ' + all_features_elements.length);
+    let all_features_for_the_price = [];
+    for (let i = 0; i < all_features_elements.length; i++) {
+      all_features_for_the_price.push(all_features_elements[i].innerText);
+    }
+    pricingG2.push({
+      name: all_elements[i].querySelector('.editions__name').innerText,
+      cost: all_elements[i].querySelector('.editions__pricing').innerText,
+      features_of_this_plan: all_features_for_the_price,
+    });
+  }
+  let all_pricing = {
+    date_of_last_update: date_of_last_update,
+    free_trial_available: free_trial_available,
+    pricingG2: pricingG2,
+  };
+  return all_pricing;
+}
+
+function extract_features(rule) {
+  let container = document.querySelector(rule);
+  let summary_of_features = [];
+  let all_elements = container.querySelectorAll('div.px-1 > ul');
+  for (let i = 0; i < all_elements.length; i++) {
+    let macro_area = all_elements[i].previousElementSibling.innerText;
+    let all_related_features = [];
+    let all_related_features_element = all_elements[i].querySelectorAll('li');
+    for (let i = 0; i < all_related_features_element.length; i++)
+      all_related_features.push(all_related_features_element[i].innerText);
+    summary_of_features.push({
+      macro_area: macro_area,
+      all_related_features: all_related_features,
+    });
+  }
+  let all_features_by_area = [];
+  let all_containers_by_area = container.querySelector('.mb-3').childNodes;
+  for (let i = 0; i < all_containers_by_area.length; i++) {
+    let area = all_containers_by_area[i].querySelector('h2').innerText;
+    let all_related_features = [];
+    let all_related_features_elements =
+      all_containers_by_area[i].querySelectorAll('tr');
+    for (let i = 0; i < all_related_features_elements.length; i++) {
+      let title =
+        all_related_features_elements[i].querySelector('h3').innerText;
+      let containers_reviews = all_related_features_elements[
+        i
+      ].querySelectorAll(
+        '[class="product-mentioned-feature__cell product-mentioned-feature__cell--bottom-row"]'
+      );
+      let description = containers_reviews[0].innerText;
+      let percentage = containers_reviews[1].firstChild.innerText;
+      let reviews_number = containers_reviews[1].childNodes[1]
+        ? containers_reviews[1].childNodes[1].innerText
+        : null_field;
+      all_related_features.push({
+        title: title,
+        description: description,
+        percentage: percentage,
+        reviews_number: reviews_number,
+      });
+    }
+    let all_extracted_features = {
+      area: area,
+      all_related_features: all_related_features
+    }
+    all_features_by_area.push(all_extracted_features);
+  }
+  return {summary_of_features, all_features_by_area};
+}
+
+if (document.URL.includes('/reviews?CEaewtoron=12345') && document.querySelector('div[class="paper__bd paper__bd--multi"]')) {
   //open all reviews page for extraction
   //window.open(document.URL.replace('?CEaewtoron=12345', ""), 'scrape_all_reviews');
+  click(document.querySelector('div.grid-y'));
   chrome.runtime.sendMessage(
-    { message: 'What are the extraction rules?' },
+    { message: 'What are the extraction rules?', scraper: 'Main Page' },
     (res) => {
       console.log('Background response for jobs:');
       console.log(res);
       job_id = res.jobId;
       startAutomation(res.rules);
+    }
+  );
+} else if (window.name == 'extract_pricingG2') {
+  chrome.runtime.sendMessage(
+    { message: 'What are the extraction rules?', scraper: 'Pricing G2' },
+    (res) => {
+      console.log('Background response for all rules:');
+      console.log(res);
+      let rule = res.rules.find((rule) => rule.property == 'pricing_G2');
+      console.log('Found one pricing rule: ');
+      console.log(rule);
+      job_id = res.jobId;
+      chrome.runtime.sendMessage(
+        {
+          message: 'Pricing Extracted',
+          pricingG2: extract_pricingG2(rule.rule),
+        },
+        (res) => {}
+      );
+    }
+  );
+} else if (window.name == 'extract_features') {
+  chrome.runtime.sendMessage(
+    { message: 'What are the extraction rules?', scraper: 'Features' },
+    (res) => {
+      console.log('Background response for all rules:');
+      console.log(res);
+      let rule = res.rules.find((rule) => rule.property == 'features');
+      console.log('Found one feature rule: ');
+      console.log(rule);
+      job_id = res.jobId;
+      chrome.runtime.sendMessage(
+        {
+          message: 'Features Extracted',
+          features: extract_features(rule.rule),
+        },
+        (res) => {}
+      );
     }
   );
 }
