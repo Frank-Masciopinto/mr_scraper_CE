@@ -16,7 +16,8 @@ export async function click(btn) {
     btn.focus();
     btn.scrollIntoView();
     btn.click();
-    btn.dispatchEvent(
+    btn.
+    dispatchEvent(
       new MouseEvent('mousedown', {
         bubbles: true,
       })

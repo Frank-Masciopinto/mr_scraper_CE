@@ -16,26 +16,48 @@
     "default_title": "Mr Scraper",
     "default_popup": "html/popup.html"
   },
-  "permissions": ["storage", "clipboardRead", "clipboardWrite", "notifications", "scripting", "activeTab", "tabs"],
+  "permissions": [
+    "storage",
+    "clipboardRead",
+    "clipboardWrite",
+    "notifications",
+    "scripting",
+    "activeTab",
+    "tabs"
+  ],
   "host_permissions": ["http://*/*", "*://*/*"],
   "options_ui": {
     "page": "html/options.html",
     "open_in_tab": true
   },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "injected_scripts/response_interceptor.js",
+        "injected_scripts/search_latest_companies.js",
+        "injected_scripts/search_company_by_name.js"
+      ],
+      "matches": ["https://*/*", "http://*/*"]
+    }
+  ],
+  "externally_connectable": {
+    "matches": ["https://www.crunchbase.com/*"]
+  },
   "content_scripts": [
     {
-      "matches": [
-        "https://www.linkedin.com/*"
-      ],
+      "matches": ["https://www.linkedin.com/*"],
       "run_at": "document_end",
       "js": ["content_Linkedin.js"]
     },
     {
-      "matches": [
-        "https://www.g2.com/*"
-      ],
+      "matches": ["https://www.g2.com/*"],
       "run_at": "document_end",
-      "js": ["content_G2.js"]
+      "js": ["content_G2.js", "content_G2_reviews.js"]
+    },
+    {
+      "matches": ["https://www.crunchbase.com/*"],
+      "run_at": "document_start",
+      "js": ["content_Crunchbase.js"]
     }
   ]
 }

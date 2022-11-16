@@ -210,72 +210,96 @@ async function startAutomation(rules) {
   // try {
   for (let i = 0; i < rules.length; i++) {
     console.log('Rule: \n' + rules[i].property);
-    if (rules[i].type == 'dom') {
-      console.log('Rule type: ' + rules[i].type);
-      let extracted_value = extract_querySelector(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].type == 'regexp') {
-      console.log('Rule type: ' + rules[i].type);
-      let extracted_value = extract_regex(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].property == 'videos') {
-      console.log('Rule property: ' + rules[i].property);
-      let extracted_value = extract_all_videos(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].property == 'recap_votes') {
-      console.log('Rule property: ' + rules[i].property);
-      let extracted_value = extract_recap_votes(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].property == 'official_downloads') {
-      console.log('Rule property: ' + rules[i].property);
-      let extracted_value = extract_official_downloads(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].property == 'official_screenshots') {
-      console.log('Rule property: ' + rules[i].property);
-      let extracted_value = extract_official_screenshots(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].type == 'regexp_innerHTML') {
-      console.log('Rule type: ' + rules[i].type);
-      let extracted_value = extract_regex_innerhtml(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].property == 'average_rating') {
-      console.log('Rule name: ' + rules[i].property);
-      let extracted_value = extract_average_rating(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].property == 'video_reviews') {
-      console.log('Rule name: ' + rules[i].property);
-      let extracted_value = extract_video_reviews(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].property == 'top_industries_represented') {
-      console.log('Rule name: ' + rules[i].property);
-      let extracted_value = extract_top_industries_represented(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].property == 'categories_on_G2') {
-      console.log('Rule name: ' + rules[i].property);
-      let extracted_value = extract_categories_on_G2(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].property == 'user_ratings') {
-      console.log('Rule name: ' + rules[i].property);
-      await click(document.querySelector(rules[i].rule));
-      let extracted_value = await extract_user_ratings(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
-    } else if (rules[i].property == 'top_rated_alternatives') {
-      console.log('Rule name: ' + rules[i].property);
-      let extracted_value = await extract_top_rated_alternatives(rules[i].rule);
-      console.log('Extracted value: ' + extracted_value);
-      extracted_info[rules[i].property] = extracted_value;
+    try {
+      if (
+        rules[i].type == 'dom' &&
+        !(rules[i].property.includes('reviews_count') ||
+          rules[i].property.includes('year_founded'))
+      ) {
+        console.log('Rule type: ' + rules[i].type);
+        let extracted_value = extract_querySelector(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].type == 'regexp') {
+        console.log('Rule type: ' + rules[i].type);
+        let extracted_value = extract_regex(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].property == 'videos') {
+        console.log('Rule property: ' + rules[i].property);
+        let extracted_value = extract_all_videos(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].property == 'recap_votes') {
+        console.log('Rule property: ' + rules[i].property);
+        let extracted_value = extract_recap_votes(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].property == 'official_downloads') {
+        console.log('Rule property: ' + rules[i].property);
+        let extracted_value = extract_official_downloads(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].property == 'official_screenshots') {
+        console.log('Rule property: ' + rules[i].property);
+        let extracted_value = extract_official_screenshots(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].type == 'regexp_innerHTML') {
+        console.log('Rule type: ' + rules[i].type);
+        let extracted_value = extract_regex_innerhtml(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].property == 'year_founded') {
+        console.log('Rule type: ' + rules[i].type);
+        let extracted_value = extract_querySelector(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = parseInt(
+          extracted_value.replace('Year Founded', '')
+        );
+      } else if (rules[i].property == 'reviews_count') {
+        console.log('Rule type: ' + rules[i].type);
+        let extracted_value = extract_querySelector(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = parseInt(
+          extracted_value.match(/\d*/)[0]
+        );
+      } else if (rules[i].property == 'average_rating') {
+        console.log('Rule name: ' + rules[i].property);
+        let extracted_value = extract_average_rating(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].property == 'video_reviews') {
+        console.log('Rule name: ' + rules[i].property);
+        let extracted_value = extract_video_reviews(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].property == 'top_industries_represented') {
+        console.log('Rule name: ' + rules[i].property);
+        let extracted_value = extract_top_industries_represented(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].property == 'categories_on_G2') {
+        console.log('Rule name: ' + rules[i].property);
+        let extracted_value = extract_categories_on_G2(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].property == 'user_ratings') {
+        console.log('Rule name: ' + rules[i].property);
+        await click(document.querySelector(rules[i].rule));
+        let extracted_value = await extract_user_ratings(rules[i].rule);
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      } else if (rules[i].property == 'top_rated_alternatives') {
+        console.log('Rule name: ' + rules[i].property);
+        let extracted_value = await extract_top_rated_alternatives(
+          rules[i].rule
+        );
+        console.log('Extracted value: ' + extracted_value);
+        extracted_info[rules[i].property] = extracted_value;
+      }
+    } catch {
+      extracted_info[rules[i].property] = null_field;
     }
   }
   status = 'success';
@@ -297,11 +321,10 @@ async function startAutomation(rules) {
     },
     (res) => {
       // window.close()
+      check_if_pricing_and_features_are_needed(rules);
     }
   );
-  check_if_pricing_and_features_are_needed(rules);
 }
-
 function check_if_pricing_and_features_are_needed(rules) {
   if (rules.some((e) => e.property === 'pricing_G2')) {
     let pricingURL = document.URL.replace('/reviews', '/pricing').replace(
@@ -317,6 +340,13 @@ function check_if_pricing_and_features_are_needed(rules) {
     );
     window.open(pricingURL, 'extract_features');
   }
+  setTimeout(() => {
+    window.open(
+      document.URL.replace('?CEaewtoron=12345', ''),
+      'scrape_all_reviews'
+    );
+    window.close();
+  }, 5000);
 }
 
 function extract_querySelector(rule) {
@@ -518,6 +548,7 @@ function extract_top_rated_alternatives(rule) {
       company_name:
         all_elements[i].querySelector('.col-2').firstElementChild.innerText,
       score: stars,
+      link: all_elements[i].href,
       avatar_image_link: all_elements[i].querySelector('img').src,
     });
   }
@@ -525,12 +556,14 @@ function extract_top_rated_alternatives(rule) {
 }
 
 function extract_pricingG2(rule) {
-  let date_of_last_update = document.querySelector(
-    'div[class="text-tiny"]'
-  ).innerText.match(/(?<=Pricing information was last updated on).*/)[0];
+  let date_of_last_update = document
+    .querySelector('div[class="text-tiny"]')
+    .innerText.match(/(?<=Pricing information was last updated on).*/)[0];
   let free_trial_available = document.querySelector(
     'svg[class="color-success mr-4th icon-checkmark-circle nessy-only"]'
-  ) ? true : false;
+  )
+    ? true
+    : false;
   let all_elements = document.querySelectorAll(rule);
   console.log('Number of elements: ' + all_elements.length);
   let pricingG2 = [];
@@ -599,16 +632,18 @@ function extract_features(rule) {
     }
     let all_extracted_features = {
       area: area,
-      all_related_features: all_related_features
-    }
+      all_related_features: all_related_features,
+    };
     all_features_by_area.push(all_extracted_features);
   }
-  return {summary_of_features, all_features_by_area};
+  return { summary_of_features, all_features_by_area };
 }
 
-if (document.URL.includes('/reviews?CEaewtoron=12345') && document.querySelector('div[class="paper__bd paper__bd--multi"]')) {
+if (
+  document.URL.includes('/reviews?CEaewtoron=12345') &&
+  document.querySelector('div[class="paper__bd paper__bd--multi"]')
+) {
   //open all reviews page for extraction
-  //window.open(document.URL.replace('?CEaewtoron=12345', ""), 'scrape_all_reviews');
   click(document.querySelector('div.grid-y'));
   chrome.runtime.sendMessage(
     { message: 'What are the extraction rules?', scraper: 'Main Page' },
@@ -648,13 +683,23 @@ if (document.URL.includes('/reviews?CEaewtoron=12345') && document.querySelector
       console.log('Found one feature rule: ');
       console.log(rule);
       job_id = res.jobId;
-      chrome.runtime.sendMessage(
-        {
-          message: 'Features Extracted',
-          features: extract_features(rule.rule),
-        },
-        (res) => {}
-      );
+      if (document.URL.includes('/features')) {
+        chrome.runtime.sendMessage(
+          {
+            message: 'Features Extracted',
+            features: extract_features(rule.rule),
+          },
+          (res) => {}
+        );
+      } else {
+        chrome.runtime.sendMessage(
+          {
+            message: 'Features Extracted',
+            features: 'No feature page found',
+          },
+          (res) => {}
+        );
+      }
     }
   );
 }

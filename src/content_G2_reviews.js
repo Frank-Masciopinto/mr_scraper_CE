@@ -49,8 +49,11 @@ let userScraper = {
       company_size = company_info.split('Mid-Market')[1];
     } else {
       job_title = company_info;
-      company_size =
-        review_element.querySelector('.mt-4th').nextElementSibling.innerText;
+      if (review_element.querySelector('.mt-4th')) {
+        company_size =
+          review_element.querySelector('.mt-4th').nextElementSibling ? review_element.querySelector('.mt-4th').nextElementSibling.innerText : null_field;
+      }
+      else company_size = null_field;
     }
     return [job_title, company_size];
   },
@@ -173,6 +176,6 @@ function start_main_automation() {
   }, 3000);
 }
 
-if (window.name == 'scrape_all_reviews') {
+if (window.name == 'scrape_all_reviews' && document.querySelector('div[class="paper__bd paper__bd--multi"]')) {
   start_main_automation();
 }
