@@ -1,8 +1,21 @@
-console.log('👉 search_company_by_name.js is here!');
+console.log('👉 search_latest_companies.js is here!');
 
 let CE_id = 'ikloafbfooegcdglmhahaeifcgjbhkon';
 let all_scraped_companies = [];
-let company_permalink_list = [];
+let date_ranges_API = ['a year ago', '30 days ago', 'today', '3 months ago'];
+let dateRange = `"1840 days ago", "1845 days ago"`;
+let jsonName = '1840_1845';
+let startDate = 1840;
+let endDate = 1845;
+
+function increase_date_range() {
+  console.log('⬆️ Increasing date range by 5');
+  startDate += 5;
+  endDate += 5;
+  console.log(startDate);
+  dateRange = `"${startDate.toString()} days ago", "${endDate.toString()} days ago"`;
+  jsonName = startDate.toString() + '_' + endDate.toString();
+}
 
 async function scrapeSingleCompany(singleCompanyPermalink) {
   return new Promise((resolve, reject) => {
@@ -18,12 +31,24 @@ async function scrapeSingleCompany(singleCompanyPermalink) {
         console.log('👽 Crunchbase Single-Company Api JsonResponse: ');
         console.log(jsonResponse);
         all_scraped_companies.push(jsonResponse);
+        if (all_scraped_companies.length > 400) {
+          downloadObjectAsJson(all_scraped_companies, jsonName);
+          all_scraped_companies = [];
+          setTimeout(() => {
+            resolve();
+          }, 500);
+        } else {
+          resolve();
+        }
+      }).catch((err) => {
+        console.log("🔴 Fetch Single-Company Failure: ")
+        console.log(err)
         resolve();
-      });
+      })
   });
 }
 
-async function loop_extract_all_companies(search_result_list) {
+async function loop_extract_all_companies(search_result_list, resolve) {
   let params_for_search_single_company =
     '?field_ids=%5B%22identifier%22,%22layout_id%22,%22facet_ids%22,%22title%22,%22short_description%22,%22is_locked%22%5D&layout_mode=view_v2';
   let crunchbase_API_single_company =
@@ -41,58 +66,83 @@ async function loop_extract_all_companies(search_result_list) {
   console.log(
     '🔚 All companies extracted successfully, returning to our API...'
   );
-  chrome.runtime.sendMessage(
-    CE_id,
-    {
-      message: 'SearchByCompanyName Extraction completed successfully',
-      all_companies: all_scraped_companies,
-    },
-    (response) => {}
-  );
+  downloadObjectAsJson(all_scraped_companies, jsonName);
+  all_scraped_companies = [];
+  resolve();
+  // chrome.runtime.sendMessage(
+  //   CE_id,
+  //   {
+  //     message: 'SearchByCompanyName Extraction completed successfully',
+  //     all_companies: all_scraped_companies,
+  //   },
+  //   (response) => {}
+  // );
 }
 
-
-function search_by_number_of_days() {
-  console.log("📅 search_by_number_of_days()");
-  fetch(
-    'https://www.crunchbase.com/v4/data/searches/organization.companies?source=custom_advanced_search',
-    {
-      headers: {
-        accept: 'application/json, text/plain, */*',
-        'accept-language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7',
-        'content-type': 'application/json',
-        'sec-ch-ua':
-          '"Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"',
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': '"Windows"',
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin',
-        'x-requested-with': 'XMLHttpRequest',
-        'x-xsrf-token': 'iI13vglQ1OCG/ZeJo/Naa8KXPVC7SuF5T4ynyx9na6s',
-      },
-      referrer:
-        'https://www.crunchbase.com/discover/organization.companies/f0248b21cbf306189728f28da20b645a',
-      referrerPolicy: 'same-origin',
-      body: '{"field_ids":["identifier","founded_on","categories","location_identifiers","short_description","rank_org_company","num_investments_funding_rounds","num_diversity_spotlight_investments","num_exits","last_funding_type","last_funding_at","funding_stage","website"],"order":[{"field_id":"rank_org_company","sort":"asc"}],"query":[{"type":"predicate","field_id":"founded_on","operator_id":"gte","include_nulls":false,"values":["30 days ago"]}],"field_aggregators":[],"collection_id":"organization.companies","limit":1000}',
-      method: 'POST',
-      mode: 'cors',
-      credentials: 'include',
-    }
-  )
-    .then((response) => response.json())
-    .then((jsonResponse) => {
-      console.log('👉 Crunchbase Api JsonResponse: ');
-      console.log(jsonResponse);
-      loop_extract_all_companies(jsonResponse.entities);
-    });
+function downloadObjectAsJson(exportObj, exportName) {
+  var dataStr =
+    'data:text/json;charset=utf-8,' +
+    encodeURIComponent(JSON.stringify(exportObj));
+  var downloadAnchorNode = document.createElement('a');
+  downloadAnchorNode.setAttribute('href', dataStr);
+  downloadAnchorNode.setAttribute('download', exportName + '.json');
+  document.body.appendChild(downloadAnchorNode); // required for firefox
+  downloadAnchorNode.click();
+  downloadAnchorNode.remove();
 }
 
-chrome.runtime.sendMessage(
-  CE_id,
-  { message: 'How many days in the past should I search?' },
-  (response) => {
-    console.log('Response from Background page', response.number_of_days);
-    search_by_number_of_days(response.number_of_days);
+function search_by_number_of_days(number_of_days) {
+  return new Promise((resolve, reject) => {
+    console.log('📅 search_by_number_of_days()');
+    console.log(number_of_days);
+    //number_of_days = `"15 months ago", "16 months ago"`; //Testing 30 days, this will go as network request parameters
+    fetch(
+      'https://www.crunchbase.com/v4/data/searches/organization.companies?source=custom_advanced_search',
+      {
+        headers: {
+          accept: 'application/json, text/plain, */*',
+          'accept-language': 'it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7',
+          'content-type': 'application/json',
+          'sec-ch-ua':
+            '"Google Chrome";v="107", "Chromium";v="107", "Not=A?Brand";v="24"',
+          'sec-ch-ua-mobile': '?0',
+          'sec-ch-ua-platform': '"Windows"',
+          'sec-fetch-dest': 'empty',
+          'sec-fetch-mode': 'cors',
+          'sec-fetch-site': 'same-origin',
+          'x-requested-with': 'XMLHttpRequest',
+          'x-xsrf-token': 'iI13vglQ1OCG/ZeJo/Naa8KXPVC7SuF5T4ynyx9na6s',
+        },
+        referrer:
+          'https://www.crunchbase.com/discover/organization.companies/ad07417c3bde085ad09e87f5f52b3b3c',
+        referrerPolicy: 'same-origin',
+        body: `{"field_ids":["identifier","founded_on","categories","location_identifiers","short_description","rank_org_company","last_funding_type","last_funding_at","funding_stage","website","revenue_range","operating_status","exited_on","company_type","twitter","facebook","linkedin","description","num_funding_rounds","last_funding_total","funding_total","equity_funding_total","investor_identifiers","ipo_status","went_public_on","stock_symbol","stock_exchange_symbol","acquirer_identifier","acquisition_price","acquisition_announced_on","investor_type"],"order":[{"field_id":"rank_org_company","sort":"asc"}],"query":[{"type":"predicate","field_id":"founded_on","operator_id":"between","include_nulls":false,"values":[${number_of_days}]}],"field_aggregators":[],"collection_id":"organization.companies","limit":1000}`,
+        method: 'POST',
+        mode: 'cors',
+        credentials: 'include',
+      }
+    )
+      .then((response) => response.json())
+      .then((jsonResponse) => {
+        console.log('📅 Crunchbase Api Latest-Companies JsonResponse: ');
+        console.log(jsonResponse);
+        loop_extract_all_companies(jsonResponse.entities, resolve);
+      });
+  });
+}
+
+async function startAutomation() {
+  while (true) {
+    await search_by_number_of_days(dateRange);
+    increase_date_range();
   }
-);
+}
+startAutomation();
+// chrome.runtime.sendMessage(
+//   CE_id,
+//   { message: 'How many days in the past should I search?' },
+//   (response) => {
+//     console.log('Response from Background page', response.number_of_days);
+//     search_by_number_of_days(response.number_of_days);
+//   }
+// );

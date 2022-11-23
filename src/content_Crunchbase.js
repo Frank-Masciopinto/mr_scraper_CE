@@ -1,5 +1,5 @@
-'use strict';
-
+ 'use strict';
+ 
 import { LS, null_field, click, scroll_to_bottom_page } from './constants.js';
 
 console.log('💪Mr_Scraper - Crunchbase content script injected💪');
@@ -21,7 +21,7 @@ function intercept_request_for_company_info() {
   requestIdleCallback(checkForDOM);
 }
 
-function inject_script_search_company_by_name() {
+function inject_script_search_company_by_name () {
   console.log("inject_script_search_company_by_name()")
   var xhrOverrideScript = document.createElement('script');
   xhrOverrideScript.type = 'text/javascript';
@@ -36,6 +36,7 @@ function inject_script_search_latest_companies() {
   xhrOverrideScript.src = chrome.runtime.getURL('./injected_scripts/search_latest_companies.js');
   document.head.prepend(xhrOverrideScript);
 }
+
 
 function wait_for_main_page_load() {
     let wait_for_main_page_load = setInterval(() => {

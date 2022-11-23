@@ -91,9 +91,7 @@ chrome.runtime.onMessageExternal.addListener(
       //   url: 'https://www.crunchbase.com/discover/organization.companies/?number_of_days=7',
       //   rules: 'company_to_search',
       // };
-      let number_of_days = parseInt(
-        currentJob.url.match(/(?<=\?number_of_days=).*/)[0]
-      );
+      let number_of_days = currentJob.url.match(/(?<=\?number_of_days=).*/)[0];
       sendResponse({ number_of_days: number_of_days });
     } else if (
       request.message == 'SearchByCompanyName Extraction completed successfully'
@@ -107,7 +105,7 @@ chrome.runtime.onMessageExternal.addListener(
       API.update_job(payload).then(async () => {
         await LS.setItem('is extraction completed?', true);
         sendResponse('Done');
-        chrome.tabs.remove(sender.tab.id);
+        //chrome.tabs.remove(sender.tab.id);
       });
     }
   }
