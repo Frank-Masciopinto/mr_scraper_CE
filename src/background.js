@@ -54,6 +54,13 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     console.log('Setting up first extracted info...');
     await LS.setItem('Company Extracted Info', request.extractedInfo);
     //check if one of the rules is pricing than open the pricing page
+  } else if (request.message == 'What are the extraction rules for any-website?') {
+    console.log('currentJob:');
+    console.log(currentJob);
+    sendResponse({
+      rules: JSON.parse(currentJob.rules),
+      jobId: currentJob.jobId,
+    });
   } else if (request.message == 'What to extract on Crunchbase?') {
     console.log('currentJob:');
     console.log(currentJob);

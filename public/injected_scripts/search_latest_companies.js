@@ -3,10 +3,10 @@ console.log('👉 search_latest_companies.js is here!');
 let CE_id = 'ikloafbfooegcdglmhahaeifcgjbhkon';
 let all_scraped_companies = [];
 let date_ranges_API = ['a year ago', '30 days ago', 'today', '3 months ago'];
-let dateRange = `"1840 days ago", "1845 days ago"`;
-let jsonName = '1840_1845';
-let startDate = 1840;
-let endDate = 1845;
+let dateRange = `"1865 days ago", "1870 days ago"`;
+let jsonName = '1865_1870';
+let startDate = 1865;
+let endDate = 1870;
 
 function increase_date_range() {
   console.log('⬆️ Increasing date range by 5');
