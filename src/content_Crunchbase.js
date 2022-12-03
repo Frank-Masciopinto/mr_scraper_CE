@@ -12,7 +12,7 @@ function intercept_request_for_company_info() {
     document.head.prepend(xhrOverrideScript);
   }
   function checkForDOM() {
-    if (document.body && document.head) {
+    if (document.head) {
       interceptData();
     } else {
       requestIdleCallback(checkForDOM);
@@ -55,7 +55,7 @@ function wait_for_main_page_load() {
       }
     }, 1000)
 }
-
+intercept_request_for_company_info()//<--testing
 if (document.URL.includes('?CEaewtoron=12345')) {
   //ask background for type of job
   wait_for_main_page_load() 

@@ -2,9 +2,22 @@
 import { API } from './api.js';
 import { LS, notify, interval_check_new_job } from './constants.js';
 const { v1: uuidv1 } = require('uuid');
-
-let currentJob;
+//test current job for api problem
+let currentJob = {
+  JobId: 666,
+  Url: 'https://www.binance.com/en/blog',
+  Rules: [
+    {
+      property: 'title',
+      rule: 'title',
+      type: 'dom',
+    },
+  ],
+  WithNetwork: true,
+  WithNetworkPayload: ['/authcenter/auth', "/configs/header/"],
+};
 let all_reviews_STATE = [];
+let ready_for_network_interceptions = false;
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   console.log('💌 Message Received 💌');
   console.log(request);
@@ -54,12 +67,28 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     console.log('Setting up first extracted info...');
     await LS.setItem('Company Extracted Info', request.extractedInfo);
     //check if one of the rules is pricing than open the pricing page
-  } else if (request.message == 'What are the extraction rules for any-website?') {
-    console.log('currentJob:');
-    console.log(currentJob);
+  } else if (request.message == 'Any-Website Extractor Completed the Job') {
+    console.log('Checking if job requires network request interception...');
+    await LS.setItem('Any-Website Extracted Info', request.extractedInfo);
+    ready_for_network_interceptions = true;
+  } else if (
+    request.message == 'What are the extraction rules for any-website?'
+  ) {
+    // console.log('currentJob:');
+    // console.log(currentJob);
+    // sendResponse({
+    //   rules: JSON.parse(currentJob.rules),
+    //   jobId: currentJob.jobId,
+    // });
     sendResponse({
-      rules: JSON.parse(currentJob.rules),
-      jobId: currentJob.jobId,
+      rules: [
+        {
+          property: 'title',
+          rule: 'title',
+          type: 'dom',
+        },
+      ],
+      jobId: 666,
     });
   } else if (request.message == 'What to extract on Crunchbase?') {
     console.log('currentJob:');
@@ -81,11 +110,6 @@ chrome.runtime.onMessageExternal.addListener(
       request.message ==
       'What is the company name I need to search for on Crunchbase?'
     ) {
-      // currentJob = { TESTING................................................................
-      //   jobId: 27,
-      //   url: 'https://www.crunchbase.com/discover/organization.companies/?company_name=Frankeinstein AI',
-      //   rules: 'company_to_search',
-      // };
       let companyName = encodeURIComponent(
         currentJob.url.match(/(?<=\?company_name=).*/)[0]
       );
@@ -93,11 +117,6 @@ chrome.runtime.onMessageExternal.addListener(
     } else if (
       request.message == 'How many days in the past should I search?'
     ) {
-      // currentJob = { TESTING................................................................
-      //   jobId: 27,
-      //   url: 'https://www.crunchbase.com/discover/organization.companies/?number_of_days=7',
-      //   rules: 'company_to_search',
-      // };
       let number_of_days = currentJob.url.match(/(?<=\?number_of_days=).*/)[0];
       sendResponse({ number_of_days: number_of_days });
     } else if (
@@ -114,9 +133,73 @@ chrome.runtime.onMessageExternal.addListener(
         sendResponse('Done');
         //chrome.tabs.remove(sender.tab.id);
       });
+    } else if (
+      request.message == 'Response Interceptor Injected and Active on this tab'
+    ) {
+      await LS.setItem(
+        'TabID where Response Interceptor is Active',
+        sender.tab.id
+      );
     }
   }
 );
+
+function waitForInterceptingNetworkRequests() {
+  console.log('🕙 Waiting for Intercepting network requests LOOP ...');
+  let waitingInterval = setInterval(() => {
+    
+  }, 1000);
+}
+
+
+chrome.runtime.onConnectExternal.addListener(function (port) {
+  let wait_for_extraction_completed = setInterval(async () => {
+    if (ready_for_network_interceptions) {
+      console.log(
+        'Ready for network interception... Checking if WithNetwork is True'
+      );
+      console.log(currentJob.WithNetwork);
+      if (currentJob.WithNetwork) {
+        clearInterval(wait_for_extraction_completed);
+        port.postMessage({
+          message: 'New Job for Request Interceptor',
+          WithNetworkPayload: currentJob.WithNetworkPayload,
+        });
+        waitForInterceptingNetworkRequests()
+      } else {
+        clearInterval(wait_for_extraction_completed);
+        let payload = {
+          uuid: await LS.getItem('CE_uuid'),
+          job_id: currentJob.jobId,
+          response: await LS.getItem('Any-Website Extracted Info'),
+          status: 'success',
+        };
+        API.update_job(payload).then(async () => {
+          await LS.setItem('is extraction completed?', true);
+        });
+      }
+    }
+  }, 2000);
+  port.onMessage.addListener(async function (request) {
+    console.log('Received a long-lived connection message from external script');
+    console.log(request);
+    if (request.message == "Request Responses Intercepted") {
+      let extracted_info = await LS.getItem('Any-Website Extracted Info')
+      extracted_info.networkConnections = request.WithNetworkUrls
+      extracted_info.networkPayload = request.WithNetworkPayload
+      //Saved responses and send back to api to close job
+      let payload = {
+        uuid: await LS.getItem('CE_uuid'),
+        job_id: currentJob.JobId,
+        response: extracted_info,
+        status: 'success',
+      };
+      API.update_job(payload).then(async () => {
+        await LS.setItem('is extraction completed?', true);
+      });
+    }
+  });
+});
 
 async function start_linkedin_worker(url) {
   //Open url using tab name for activating content script and extract info
@@ -141,6 +224,32 @@ async function start_linkedin_worker(url) {
       //All Contacts LISTED
       else {
         console.log('Company details not fetched yet, in loop...');
+      }
+    }, 3000);
+  });
+}
+async function start_any_website_worker(url) {
+  //Open url using tab name for activating content script and extract info
+  console.log('start_any_website_worker Opening url: ' + url);
+  await LS.setItem('currently extracting', true);
+  chrome.tabs.create({ url: url });
+  return new Promise((resolve, reject) => {
+    var extractionInterval = setInterval(async function () {
+      //wait for getting email
+      if ((await LS.getItem('is extraction completed?')) == true) {
+        console.log('Any-Website details fetched');
+        clearInterval(extractionInterval);
+        await LS.setItem('is extraction completed?', false);
+        resolve('Fetched');
+      } else if ((await LS.getItem('is extraction completed?')) == 404) {
+        console.log('Any-Website 404 not found');
+        await LS.setItem('is extraction completed?', false);
+        clearInterval(extractionInterval);
+        resolve('404');
+      }
+      //All Contacts LISTED
+      else {
+        console.log('Any-Website details not fetched yet, in loop...');
       }
     }, 3000);
   });
@@ -186,7 +295,9 @@ async function checkJobLoop() {
       currentJob = response.job;
       if (currentJob.rules.includes('company_to_search'))
         await start_crunchbase_worker(currentJob);
-      else await start_linkedin_worker(currentJob.url);
+      else if (currentJob.url.includes('?any-website')) {
+        await start_any_website_worker(currentJob.url);
+      } else await start_linkedin_worker(currentJob.url);
     } else {
       await LS.setItem('currently extracting', false);
       console.log('No Job found... Waiting 30 minutes before next call...');
