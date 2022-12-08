@@ -14,7 +14,7 @@ let currentJob = {
     },
   ],
   WithNetwork: true,
-  WithNetworkPayload: ['/authcenter/auth', "/configs/header/"],
+  WithNetworkPayload: ['/authcenter/auth', '/configs/header/'],
 };
 let all_reviews_STATE = [];
 let ready_for_network_interceptions = false;
@@ -131,7 +131,7 @@ chrome.runtime.onMessageExternal.addListener(
       API.update_job(payload).then(async () => {
         await LS.setItem('is extraction completed?', true);
         sendResponse('Done');
-        //chrome.tabs.remove(sender.tab.id);
+        chrome.tabs.remove(sender.tab.id);
       });
     } else if (
       request.message == 'Response Interceptor Injected and Active on this tab'
@@ -146,11 +146,8 @@ chrome.runtime.onMessageExternal.addListener(
 
 function waitForInterceptingNetworkRequests() {
   console.log('🕙 Waiting for Intercepting network requests LOOP ...');
-  let waitingInterval = setInterval(() => {
-    
-  }, 1000);
+  let waitingInterval = setInterval(() => {}, 1000);
 }
-
 
 chrome.runtime.onConnectExternal.addListener(function (port) {
   let wait_for_extraction_completed = setInterval(async () => {
@@ -165,7 +162,7 @@ chrome.runtime.onConnectExternal.addListener(function (port) {
           message: 'New Job for Request Interceptor',
           WithNetworkPayload: currentJob.WithNetworkPayload,
         });
-        waitForInterceptingNetworkRequests()
+        waitForInterceptingNetworkRequests();
       } else {
         clearInterval(wait_for_extraction_completed);
         let payload = {
@@ -181,12 +178,14 @@ chrome.runtime.onConnectExternal.addListener(function (port) {
     }
   }, 2000);
   port.onMessage.addListener(async function (request) {
-    console.log('Received a long-lived connection message from external script');
+    console.log(
+      'Received a long-lived connection message from external script'
+    );
     console.log(request);
-    if (request.message == "Request Responses Intercepted") {
-      let extracted_info = await LS.getItem('Any-Website Extracted Info')
-      extracted_info.networkConnections = request.WithNetworkUrls
-      extracted_info.networkPayload = request.WithNetworkPayload
+    if (request.message == 'Request Responses Intercepted') {
+      let extracted_info = await LS.getItem('Any-Website Extracted Info');
+      extracted_info.networkConnections = request.WithNetworkUrls;
+      extracted_info.networkPayload = request.WithNetworkPayload;
       //Saved responses and send back to api to close job
       let payload = {
         uuid: await LS.getItem('CE_uuid'),
@@ -305,15 +304,26 @@ async function checkJobLoop() {
     }
   }
 }
-checkJobLoop();
-//Periodically check for new jobs if previous extraction loop is not running
-setInterval(async () => {
-  if (!(await LS.getItem('currently extracting'))) checkJobLoop();
-}, interval_check_new_job);
+setTimeout(() => {
+  checkJobInterval();
+}, 200);
+
+async function checkJobInterval() {
+  let interval_check_new_job = await LS.getItem('getJob_interval');
+  console.log(interval_check_new_job);
+  checkJobLoop()
+  //Periodically check for new jobs if previous extraction loop is not running
+  setInterval(async () => {
+    if (!(await LS.getItem('currently extracting'))) checkJobLoop();
+  }, interval_check_new_job);
+}
 
 chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason == 'install') {
     await LS.setItem('CE_uuid', uuidv1());
+    await LS.setItem('getJob_interval', 1800000);
+    await LS.setItem('API_Endpoint', "https://api.saascafe.io/");
+    await LS.setItem('loggedIn_Apps', []);
     notify(
       'Mr Scraper Installed Successfully',
       'Get started!',

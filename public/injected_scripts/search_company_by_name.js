@@ -1,6 +1,6 @@
 console.log('👉 search_company_by_name.js is here!');
 
-let CE_id = 'ikloafbfooegcdglmhahaeifcgjbhkon';
+let CE_id = 'apnnmchjlppmonaepaeikhommenadlgk';
 let all_scraped_companies = [];
 
 

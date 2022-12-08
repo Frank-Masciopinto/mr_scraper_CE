@@ -15,5 +15,4 @@ function inject_response_interceptor() {
     }
   }, 100);
 }
-
-inject_response_interceptor();
+if (document.URL.includes("?any-website")) inject_response_interceptor();

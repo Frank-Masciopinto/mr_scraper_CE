@@ -1,13 +1,24 @@
-import { API_ENDPOINTS } from './constants.js';
+import { API_ENDPOINTS, LS } from './constants.js';
 
 export var API = {
   check_for_new_job: function () {
     console.log('Checking for new Jobs...');
-    return new Promise(function (resolve, reject) {
-      fetch(API_ENDPOINTS.check_for_new_job, {
-        // Adding method type
-        method: 'POST',
-      })
+    return new Promise(async function (resolve, reject) {
+      let LS_loggedIn_Apps = await LS.getItem('loggedIn_Apps');
+      let params = "";
+      for (let i = 0; i < LS_loggedIn_Apps.length; i++) {
+        params = params.concat('&',LS_loggedIn_Apps[i],'=true');
+      }
+      fetch(
+        (await LS.getItem('API_Endpoint')) +
+          API_ENDPOINTS.check_for_new_job +
+          (await LS.getItem('CE_uuid')) +
+          params,
+        {
+          // Adding method type
+          method: 'POST',
+        }
+      )
         .then((response) => response.json())
         .then((jsonResponse) => {
           console.log('Api JsonResponse: ');
@@ -43,12 +54,13 @@ export var API = {
   update_job: function (extracted_info) {
     console.log('Updating Job Result... Payload:');
     console.log(extracted_info);
-    return new Promise(function (resolve, reject) {
-      fetch(API_ENDPOINTS.update_job, {
+    return new Promise(async function (resolve, reject) {
+      fetch((await LS.getItem('API_Endpoint')) + API_ENDPOINTS.update_job, {
         // Adding method type
         method: 'POST',
         headers: {
-          "Content-Type": 'application/json'},
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(extracted_info),
       })
         .then((response) => response.json())
@@ -77,4 +89,3 @@ export var API = {
     });
   },
 };
- 

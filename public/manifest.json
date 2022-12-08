@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Mr Scraper",
-  "version": "1.0",
-  "description": "Scrape Linkedin, G2 & Crunchbase",
+  "version": "1.1",
+  "description": "Scrape Linkedin, G2, Crunchbase & Any Website",
   "icons": {
     "16": "icons/icon_16.png",
     "32": "icons/icon_32.png",
@@ -12,6 +12,7 @@
   "background": {
     "service_worker": "background.js"
   },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAt+R0khO/jlGCxEzPAXN/S78Zn+ab/VNTfxPsYCX5ZRLEU6cLmKpImtnwhBnkQMLg22POFXBNTDICl9Q6fsuKrpzvgscA/v017tric4FRW8HTENHzS1CKgNQhm6187vdypayOGyewhRXrQwNXMiOVjWr+g7+gS8CntV+VIrbPt7DannG+odDQVLvWXeUqatUMXqglfRzfdhFunmSNKY+i1iUHau5NFQCI5TMz5XC13Ym4zgA39s5YIHalO6XnO7tmgX1A3Pf6dUaL5pFWdzROYt9hzgnN5azAo0PGnQkIwu+O2GxoYm3Mi5Uj2YWXKI4z1xKTsoT/Vx2/NWmaWo4nZwIDAQAB",
   "action": {
     "default_title": "Mr Scraper",
     "default_popup": "html/popup.html"

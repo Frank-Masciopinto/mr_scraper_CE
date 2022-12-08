@@ -11,9 +11,24 @@
     <div id="logo-container" class="justify-center">
         <h3>Mr Scraper</h3>
     </div>
-    <div id="email-form">
+    <div id="extension-settings">
         <label for="uuid">Your UUID <font style="color:#ff0000">*</font></label>
         <input type="text" id="uuid" placeholder="1234567890">
+        <label for="api-endpoint">API Endpoint <font style="color:#ff0000">*</font></label>
+        <input type="text" id="api-endpoint" placeholder="https://api.saascafe.io/">
+        <label for="job-interval">Get-Job Interval in Seconds <font style="color:#ff0000">*</font></label>
+        <input type="text" id="job-interval" placeholder="Numbers Only">
+        <div id="list1" class="dropdown-check-list" tabindex="100">
+            <span class="anchor">Select Logged-In Apps</span>
+            <ul class="items">
+              <li><input type="checkbox" name="Facebook" />Facebook</li>
+              <li><input type="checkbox" name="Linkedin" />Linkedin</li>
+              <li><input type="checkbox" name="Twitter" />Twitter</li>
+              <li><input type="checkbox" name="Crunchbase" />Crunchbase</li>
+              <li><input type="checkbox" name="Bookface" />Bookface</li>
+              <li><input type="checkbox" name="Ahrefs" />Ahrefs</li>
+            </ul>
+          </div>
     </div>
     <script src="../popup.js"></script>
 </body>

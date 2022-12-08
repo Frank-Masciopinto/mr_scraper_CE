@@ -4,22 +4,6 @@ import { LS, null_field, click, scroll_to_bottom_page } from './constants.js';
 
 console.log('💪Mr_Scraper - Crunchbase content script injected💪');
  
-function intercept_request_for_company_info() {
-  function interceptData() {
-    var xhrOverrideScript = document.createElement('script');
-    xhrOverrideScript.type = 'text/javascript';
-    xhrOverrideScript.src = chrome.runtime.getURL('./injected_scripts/response_interceptor.js');
-    document.head.prepend(xhrOverrideScript);
-  }
-  function checkForDOM() {
-    if (document.head) {
-      interceptData();
-    } else {
-      requestIdleCallback(checkForDOM);
-    }
-  }
-  requestIdleCallback(checkForDOM);
-}
 
 function inject_script_search_company_by_name () {
   console.log("inject_script_search_company_by_name()")
@@ -55,7 +39,6 @@ function wait_for_main_page_load() {
       }
     }, 1000)
 }
-intercept_request_for_company_info()//<--testing
 if (document.URL.includes('?CEaewtoron=12345')) {
   //ask background for type of job
   wait_for_main_page_load() 

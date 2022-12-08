@@ -1,21 +1,9 @@
 console.log('👉 search_latest_companies.js is here!');
 
-let CE_id = 'ikloafbfooegcdglmhahaeifcgjbhkon';
+let CE_id = 'apnnmchjlppmonaepaeikhommenadlgk';
 let all_scraped_companies = [];
 let date_ranges_API = ['a year ago', '30 days ago', 'today', '3 months ago'];
-let dateRange = `"1865 days ago", "1870 days ago"`;
-let jsonName = '1865_1870';
-let startDate = 1865;
-let endDate = 1870;
 
-function increase_date_range() {
-  console.log('⬆️ Increasing date range by 5');
-  startDate += 5;
-  endDate += 5;
-  console.log(startDate);
-  dateRange = `"${startDate.toString()} days ago", "${endDate.toString()} days ago"`;
-  jsonName = startDate.toString() + '_' + endDate.toString();
-}
 
 async function scrapeSingleCompany(singleCompanyPermalink) {
   return new Promise((resolve, reject) => {
@@ -31,15 +19,7 @@ async function scrapeSingleCompany(singleCompanyPermalink) {
         console.log('👽 Crunchbase Single-Company Api JsonResponse: ');
         console.log(jsonResponse);
         all_scraped_companies.push(jsonResponse);
-        if (all_scraped_companies.length > 400) {
-          downloadObjectAsJson(all_scraped_companies, jsonName);
-          all_scraped_companies = [];
-          setTimeout(() => {
-            resolve();
-          }, 500);
-        } else {
-          resolve();
-        }
+        resolve();
       }).catch((err) => {
         console.log("🔴 Fetch Single-Company Failure: ")
         console.log(err)
@@ -66,29 +46,15 @@ async function loop_extract_all_companies(search_result_list, resolve) {
   console.log(
     '🔚 All companies extracted successfully, returning to our API...'
   );
-  downloadObjectAsJson(all_scraped_companies, jsonName);
-  all_scraped_companies = [];
   resolve();
-  // chrome.runtime.sendMessage(
-  //   CE_id,
-  //   {
-  //     message: 'SearchByCompanyName Extraction completed successfully',
-  //     all_companies: all_scraped_companies,
-  //   },
-  //   (response) => {}
-  // );
-}
-
-function downloadObjectAsJson(exportObj, exportName) {
-  var dataStr =
-    'data:text/json;charset=utf-8,' +
-    encodeURIComponent(JSON.stringify(exportObj));
-  var downloadAnchorNode = document.createElement('a');
-  downloadAnchorNode.setAttribute('href', dataStr);
-  downloadAnchorNode.setAttribute('download', exportName + '.json');
-  document.body.appendChild(downloadAnchorNode); // required for firefox
-  downloadAnchorNode.click();
-  downloadAnchorNode.remove();
+  chrome.runtime.sendMessage(
+    CE_id,
+    {
+      message: 'SearchByCompanyName Extraction completed successfully',
+      all_companies: all_scraped_companies,
+    },
+    (response) => {}
+  );
 }
 
 function search_by_number_of_days(number_of_days) {
@@ -131,18 +97,11 @@ function search_by_number_of_days(number_of_days) {
   });
 }
 
-async function startAutomation() {
-  while (true) {
-    await search_by_number_of_days(dateRange);
-    increase_date_range();
+chrome.runtime.sendMessage(
+  CE_id,
+  { message: 'How many days in the past should I search?' },
+  (response) => {
+    console.log('Response from Background page', response.number_of_days);
+    search_by_number_of_days(response.number_of_days);
   }
-}
-startAutomation();
-// chrome.runtime.sendMessage(
-//   CE_id,
-//   { message: 'How many days in the past should I search?' },
-//   (response) => {
-//     console.log('Response from Background page', response.number_of_days);
-//     search_by_number_of_days(response.number_of_days);
-//   }
-// );
+);

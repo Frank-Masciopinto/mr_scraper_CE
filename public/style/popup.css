@@ -4,6 +4,79 @@ html {
 label {
   font-size: 1.5rem;
 }
+#extension-settings {
+  margin: 10px;
+}
+.dropdown-check-list {
+  display: inline-block;
+}
+
+.dropdown-check-list .anchor {
+  position: relative;
+  cursor: pointer;
+  display: inline-block;
+  padding: 5px 50px 5px 10px;
+  border: 1px solid #ccc;
+}
+
+.dropdown-check-list .anchor:after {
+  position: absolute;
+  content: "";
+  border-left: 2px solid black;
+  border-top: 2px solid black;
+  padding: 5px;
+  right: 10px;
+  top: 20%;
+  -moz-transform: rotate(-135deg);
+  -ms-transform: rotate(-135deg);
+  -o-transform: rotate(-135deg);
+  -webkit-transform: rotate(-135deg);
+  transform: rotate(-135deg);
+}
+
+.dropdown-check-list .anchor:active:after {
+  right: 8px;
+  top: 21%;
+}
+
+.dropdown-check-list ul.items {
+  padding: 2px;
+  display: none;
+  margin: 0;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+/* Track */
+::-webkit-scrollbar-track {
+  box-shadow: inset 0 0 5px grey; 
+  border-radius: 10px;
+}
+ 
+/* Handle */
+::-webkit-scrollbar-thumb {
+  background: gold; 
+  border-radius: 10px;
+}
+
+/* Handle on hover */
+::-webkit-scrollbar-thumb:hover {
+  background: #b30000; 
+}
+.dropdown-check-list ul.items li {
+  list-style: none;
+}
+
+.dropdown-check-list.visible .anchor {
+  color: gold;
+}
+
+.dropdown-check-list.visible .items {
+  display: block;
+}
 #pending_tickets_table {
   width: max-content;
   margin: 20px;
@@ -125,30 +198,3 @@ input:focus {
 
 /* Change the background color of the dropdown button when the dropdown content is shown */
 .dropdown:hover .dropbtn {background-color: #3e8e41;}
-
-
-.approvedRow {
-  background: greenyellow;
-  color: green;
-}
-
-.deniedRow {
-  background: darkred;
-  color: #ff006a;
-}
-.notedRow {
-  background: #b2fffa;
-  color: black;
-}
-a:hover {
-  cursor: pointer;
-}
-th, td {
-  text-align: center;
-}
-td:last-child, th:last-child {
-  padding-right: 15px !important;
-}
-td:first-child, th:first-child {
-  padding-left: 15px !important;
-}
