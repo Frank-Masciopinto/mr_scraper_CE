@@ -67,8 +67,12 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     }
     sendResponse('Done');
   } else if (request.message == 'Company Info on First Page Extracted') {
-    console.log('Setting up first extracted info...');
+    console.log('Setting up first G2 extracted info...');
     await LS.setItem('Company Extracted Info', request.extractedInfo);
+    sendResponse('Done');
+    //Check for withNetwork below
+    await LS.setItem('G2_current_tabID', sender.tab.id);
+    ready_for_network_interceptions = true;
     //check if one of the rules is pricing than open the pricing page
   } else if (request.message == 'Any-Website Extractor Completed the Job') {
     console.log('Checking if job requires network request interception...');
@@ -120,22 +124,16 @@ chrome.runtime.onMessageExternal.addListener(
     } else if (
       request.message == 'How many days in the past should I search?'
     ) {
-      let number_of_days = currentJob.url.match(/(?<=\?number_of_days=).*/)[0];
+      let number_of_days = currentJob.rules;
       sendResponse({ number_of_days: number_of_days });
     } else if (
       request.message == 'SearchByCompanyName Extraction completed successfully'
     ) {
-      let payload = {
-        uuid: await LS.getItem('CE_uuid'),
-        job_id: currentJob.jobId,
-        response: request.all_companies,
-        status: 'success',
-      };
-      API.update_job(payload).then(async () => {
-        await LS.setItem('is extraction completed?', true);
-        sendResponse('Done');
-        chrome.tabs.remove(sender.tab.id);
-      });
+      sendResponse('Done');
+      //Check for withNetwork below
+      await LS.setItem('Current Job Extracted Info', request.all_companies[0]);
+      await LS.setItem('linkedin_current_tabID', sender.tab.id);
+      ready_for_network_interceptions = true;
     } else if (
       request.message == 'Response Interceptor Injected and Active on this tab'
     ) {
@@ -162,10 +160,72 @@ chrome.runtime.onConnectExternal.addListener(function (port) {
         });
       } else {
         clearInterval(wait_for_extraction_completed);
+        let G2_current_tabID = await LS.getItem('G2_current_tabID');
+        if (G2_current_tabID) {
+          await LS.setItem('G2_current_tabID', false);
+          //If we are extracting G2, wait for reviews extraction
+          chrome.tabs.sendMessage(
+            G2_current_tabID,
+            { message: 'Network Requests Extracted Successfully' },
+            function (msg) {}
+          );
+        } else {
+          currentJob = await LS.getItem('CurrentJob')
+          console.log("CurrentJob: ", currentJob)
+          let payload = {
+            uuid: await LS.getItem('CE_uuid'),
+            job_id: currentJob.job_id,
+            response: await LS.getItem('Current Job Extracted Info'),
+            status: 'success',
+          };
+          API.update_job(payload).then(async () => {
+            await LS.setItem('is extraction completed?', true);
+            let linkedin_current_tabID = await LS.getItem(
+              'linkedin_current_tabID'
+            );
+            if (linkedin_current_tabID) {
+              chrome.tabs.remove(linkedin_current_tabID);
+              await LS.setItem('linkedin_current_tabID', false);
+            }
+          });
+        }
+      }
+    }
+  }, 2000);
+  port.onMessage.addListener(async function (request) {
+    console.log(
+      'Received a long-lived connection message from external script'
+    );
+    console.log(request);
+    if (request.message == 'Request Responses Intercepted') {
+      let G2_current_tabID = await LS.getItem('G2_current_tabID');
+      console.log("Extracting G2? TabID: ", G2_current_tabID)
+      if (G2_current_tabID) {
+        //If we are extracting G2, wait for reviews extraction and save requests responses
+        await LS.setItem('G2_current_tabID', false);
+        let company_extracted_info = await LS.getItem('Company Extracted Info');
+        company_extracted_info.response.networkConnections =
+          request.WithNetworkUrls;
+        company_extracted_info.response.networkPayload =
+          request.WithNetworkPayload;
+        await LS.setItem('Company Extracted Info', company_extracted_info);
+        chrome.tabs.sendMessage(
+          G2_current_tabID,
+          { message: 'Network Requests Extracted Successfully' },
+          function (msg) {}
+        );
+      } else {
+        let extracted_info = await LS.getItem('Current Job Extracted Info');
+        let job = await LS.getItem('CurrentJob')
+        let id = job.jobId
+        console.log("CurrentJob ID: ", job)
+        extracted_info.networkConnections = request.WithNetworkUrls;
+        extracted_info.networkPayload = request.WithNetworkPayload;
+        //Saved responses and send back to api to close job
         let payload = {
           uuid: await LS.getItem('CE_uuid'),
-          job_id: currentJob.jobId,
-          response: await LS.getItem('Current Job Extracted Info'),
+          job_id: id,
+          response: extracted_info,
           status: 'success',
         };
         API.update_job(payload).then(async () => {
@@ -179,27 +239,6 @@ chrome.runtime.onConnectExternal.addListener(function (port) {
           }
         });
       }
-    }
-  }, 2000);
-  port.onMessage.addListener(async function (request) {
-    console.log(
-      'Received a long-lived connection message from external script'
-    );
-    console.log(request);
-    if (request.message == 'Request Responses Intercepted') {
-      let extracted_info = await LS.getItem('Current Job Extracted Info');
-      extracted_info.networkConnections = request.WithNetworkUrls;
-      extracted_info.networkPayload = request.WithNetworkPayload;
-      //Saved responses and send back to api to close job
-      let payload = {
-        uuid: await LS.getItem('CE_uuid'),
-        job_id: currentJob.JobId,
-        response: extracted_info,
-        status: 'success',
-      };
-      API.update_job(payload).then(async () => {
-        await LS.setItem('is extraction completed?', true);
-      });
     }
   });
 });
@@ -364,7 +403,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason == 'install') {
     await LS.setItem('CE_uuid', uuidv1());
     await LS.setItem('getJob_interval', 1800000);
-    await LS.setItem('API_Endpoint', 'https://api.saascafe.io/');
+    await LS.setItem('API_Endpoint', 'https://competitors-be.saascafe.io/');
     await LS.setItem('loggedIn_Apps', []);
     notify(
       'Mr Scraper Installed Successfully',

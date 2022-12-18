@@ -7,6 +7,7 @@ let job_id;
 let all_reviews_STATE = [];
 let all_reviews_pages_extracted = false;
 let last_page_to_scrap;
+let jobRules;
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log(request);
@@ -18,14 +19,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
       all_reviews_pages_extracted = true;
       sendResponse('Last Page Extracted, Close window');
     } else sendResponse('Done');
+  } else if (request.message == 'Network Requests Extracted Successfully') {
+    check_if_pricing_and_features_are_needed(jobRules);
+    sendResponse('Done')
   }
 });
-
 
 async function startAutomation(rules) {
   console.log('Start Automation with rules: ');
   console.log(rules);
-  rules = [
+  let general_rules = [
     {
       property: 'company_name',
       rule: `div.product-head__title > div`,
@@ -142,7 +145,6 @@ async function startAutomation(rules) {
       type: 'multiple_dom',
     },
   ];
-  console.log(JSON.stringify(rules));
   let extracted_info = {};
   let status;
   let uuid = await LS.getItem('uuid');
@@ -152,8 +154,10 @@ async function startAutomation(rules) {
     try {
       if (
         rules[i].type == 'dom' &&
-        !(rules[i].property.includes('reviews_count') ||
-          rules[i].property.includes('year_founded'))
+        !(
+          rules[i].property.includes('reviews_count') ||
+          rules[i].property.includes('year_founded')
+        )
       ) {
         console.log('Rule type: ' + rules[i].type);
         let extracted_value = extract_querySelector(rules[i].rule);
@@ -256,14 +260,11 @@ async function startAutomation(rules) {
   chrome.runtime.sendMessage(
     {
       message: 'Company Info on First Page Extracted',
-      scraper: "G2",
+      scraper: 'G2',
       url: document.URL,
       extractedInfo: payload,
     },
-    (res) => {
-      // window.close()
-      check_if_pricing_and_features_are_needed(rules);
-    }
+    (res) => {}
   );
 }
 function check_if_pricing_and_features_are_needed(rules) {
@@ -592,6 +593,7 @@ if (
       console.log('Background response for jobs:');
       console.log(res);
       job_id = res.jobId;
+      jobRules = res.rules
       startAutomation(res.rules);
     }
   );

@@ -106,10 +106,26 @@
     this.addEventListener('load', function () {
       console.log('Got Response 🤯');
       console.log(this);
-      this.response.text().then((res) => {
-        job_network_payload.push({endpoint: this.url, payload:res});
-        console.log(res);
-      });
+      try {
+        this.response
+          .text()
+          .then((res) => {
+            job_network_payload.push({ endpoint: this.url, payload: res });
+            console.log(res);
+          })
+          .catch((err) => {
+            job_network_payload.push({ endpoint: this.url, payload: err });
+            console.log('❌ Error on getting response.Text()');
+            console.log(err);
+          });
+      } catch (err) {
+        console.log('❌ Error on getting response.Text()');
+        console.log(err);
+        job_network_payload.push({
+          endpoint: this.url,
+          payload: this.response,
+        });
+      }
       gotResponse = true;
       //sendResponsetoBackground(this.response);
     });

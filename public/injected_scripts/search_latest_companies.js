@@ -51,7 +51,7 @@ async function loop_extract_all_companies(search_result_list, resolve) {
     CE_id,
     {
       message: 'SearchByCompanyName Extraction completed successfully',
-      all_companies: all_scraped_companies,
+      all_companies: [all_scraped_companies],
     },
     (response) => {}
   );

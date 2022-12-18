@@ -16,7 +16,7 @@ window.onload = function () {
         oldHref != document.location.href &&
         !oldHref.includes('?CEaewtoron=12345')
       ) {
-        oldHref = document.location.href;
+        oldHref = docmuent.location.href;
         console.log('Previous URL doesnt have parameters');
         if (document.URL.includes('/jobs/search/')) {
           let waitPageLoad = setInterval(() => {
@@ -151,13 +151,7 @@ async function startAutomation(rules) {
     status = 'failure';
   }
   console.log('Extracted info: \n', extracted_info);
-  let payload = {
-    uuid: await LS.getItem('CE_uuid'),
-    job_id: job_id,
-    response: extracted_info,
-    status: status,
-  };
-  notify_background_extraction_completed(payload);
+  notify_background_extraction_completed(extracted_info);
 }
 
 function extract_querySelector(rule) {
