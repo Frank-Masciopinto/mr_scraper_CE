@@ -81,11 +81,6 @@
       args: arguments,
     });
     job_network_urls.push(url);
-    console.log('REQUEST SAVED: ');
-    console.log({
-      request: this,
-      args: arguments,
-    });
     return open.apply(this, arguments);
   };
   function sendResponsetoBackground(response) {

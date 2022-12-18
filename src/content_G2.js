@@ -7,49 +7,6 @@ let job_id;
 let all_reviews_STATE = [];
 let all_reviews_pages_extracted = false;
 let last_page_to_scrap;
-// window.onload = function () {
-//   var bodyList = document.querySelector('body');
-//   var observer = new MutationObserver(function (mutations) {
-//     mutations.forEach(function (mutation) {
-//       if (
-//         oldHref != document.location.href &&
-//         !oldHref.includes('?CEaewtoron=12345')
-//       ) {
-//         oldHref = document.location.href;
-//         console.log('Previous URL doesnt have parameters');
-//         if (document.URL.includes('/jobs/search/')) {
-//           let waitPageLoad = setInterval(() => {
-//             if (document.querySelector('.jobs-search-results-list')) {
-//               chrome.runtime.sendMessage(
-//                 { message: 'What are the extraction rules?' },
-//                 (res) => {
-//                   if (res) {
-//                     //If background waiting for extraction
-//                     console.log('ASked for Job Id to background... Repsonse: ');
-//                     console.log(res.jobId);
-//                     job_id = res.jobId;
-//                     extract_all_jobs();
-//                   }
-//                 }
-//               );
-//               clearInterval(waitPageLoad);
-//             }
-//           }, 2000);
-//         }
-//       } else if (oldHref != document.location.href) {
-//         console.log('Mutation has different url from previous one...');
-//         oldHref = document.location.href;
-//       }
-//     });
-//   });
-
-//   var config = {
-//     childList: true,
-//     subtree: true,
-//   };
-
-//   observer.observe(bodyList, config);
-// };
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   console.log(request);
@@ -64,25 +21,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   }
 });
 
-// async function wait_for_all_pages_extractions() {
-//   last_page_to_scrap = parseInt(
-//     document
-//       .querySelector('div[data-poison-omit] > ul > li:last-child > a')
-//       .href.match(/(?<=\?page\=).*/)
-//   );
-//   return new Promise(function (resolve, reject) {
-//     let wait_for_all_pages_extractions = setInterval(() => {
-//       if (all_reviews_pages_extracted) {
-//         console.log('📪 All pages have been extracted');
-//         clearInterval(wait_for_all_pages_extractions);
-//         resolve(true);
-//       }
-//       else {
-//         console.log('🕒 Still waiting for all pages to be extracted 🕒');
-//       }
-//     }, 3000);
-//   });
-// }
+
 async function startAutomation(rules) {
   console.log('Start Automation with rules: ');
   console.log(rules);
@@ -317,6 +256,8 @@ async function startAutomation(rules) {
   chrome.runtime.sendMessage(
     {
       message: 'Company Info on First Page Extracted',
+      scraper: "G2",
+      url: document.URL,
       extractedInfo: payload,
     },
     (res) => {

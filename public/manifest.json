@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Mr Scraper",
-  "version": "1.1",
+  "version": "1.2",
   "description": "Scrape Linkedin, G2, Crunchbase & Any Website",
   "icons": {
     "16": "icons/icon_16.png",

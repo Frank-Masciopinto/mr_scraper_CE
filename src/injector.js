@@ -15,4 +15,4 @@ function inject_response_interceptor() {
     }
   }, 100);
 }
-if (document.URL.includes("?any-website")) inject_response_interceptor();
+if (document.URL.includes("?any-website") || document.URL.includes("?CEaewtoron=12345")) inject_response_interceptor();

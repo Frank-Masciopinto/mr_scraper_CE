@@ -3,19 +3,20 @@ import { API } from './api.js';
 import { LS, notify, interval_check_new_job } from './constants.js';
 const { v1: uuidv1 } = require('uuid');
 //test current job for api problem
-let currentJob = {
-  JobId: 666,
-  Url: 'https://www.binance.com/en/blog',
-  Rules: [
-    {
-      property: 'title',
-      rule: 'title',
-      type: 'dom',
-    },
-  ],
-  WithNetwork: true,
-  WithNetworkPayload: ['/authcenter/auth', '/configs/header/'],
-};
+// let currentJob = {
+//   JobId: 666,
+//   Url: 'https://www.binance.com/en/blog',
+//   Rules: [
+//     {
+//       property: 'title',
+//       rule: 'title',
+//       type: 'dom',
+//     },
+//   ],
+//   WithNetwork: true,
+//   WithNetworkPayload: ['/authcenter/auth', '/configs/header/'],
+// };
+let currentJob;
 let all_reviews_STATE = [];
 let ready_for_network_interceptions = false;
 chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
@@ -29,9 +30,11 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
       jobId: currentJob.jobId,
     });
   } else if (request.message == 'Extraction Completed') {
-    await LS.setItem('is extraction completed?', true);
     sendResponse('Done');
-    chrome.tabs.remove(sender.tab.id);
+    //Check for withNetwork below
+    await LS.setItem('Current Job Extracted Info', request.payload);
+    await LS.setItem('linkedin_current_tabID', sender.tab.id);
+    ready_for_network_interceptions = true;
   } else if (request.message == 'Pricing Extracted') {
     console.log('👉updating extracted info state with G2 Pricing information');
     await LS.setItem('Pricing Extracted', true);
@@ -69,7 +72,7 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
     //check if one of the rules is pricing than open the pricing page
   } else if (request.message == 'Any-Website Extractor Completed the Job') {
     console.log('Checking if job requires network request interception...');
-    await LS.setItem('Any-Website Extracted Info', request.extractedInfo);
+    await LS.setItem('Current Job Extracted Info', request.extractedInfo);
     ready_for_network_interceptions = true;
   } else if (
     request.message == 'What are the extraction rules for any-website?'
@@ -144,11 +147,6 @@ chrome.runtime.onMessageExternal.addListener(
   }
 );
 
-function waitForInterceptingNetworkRequests() {
-  console.log('🕙 Waiting for Intercepting network requests LOOP ...');
-  let waitingInterval = setInterval(() => {}, 1000);
-}
-
 chrome.runtime.onConnectExternal.addListener(function (port) {
   let wait_for_extraction_completed = setInterval(async () => {
     if (ready_for_network_interceptions) {
@@ -162,17 +160,23 @@ chrome.runtime.onConnectExternal.addListener(function (port) {
           message: 'New Job for Request Interceptor',
           WithNetworkPayload: currentJob.WithNetworkPayload,
         });
-        waitForInterceptingNetworkRequests();
       } else {
         clearInterval(wait_for_extraction_completed);
         let payload = {
           uuid: await LS.getItem('CE_uuid'),
           job_id: currentJob.jobId,
-          response: await LS.getItem('Any-Website Extracted Info'),
+          response: await LS.getItem('Current Job Extracted Info'),
           status: 'success',
         };
         API.update_job(payload).then(async () => {
           await LS.setItem('is extraction completed?', true);
+          let linkedin_current_tabID = await LS.getItem(
+            'linkedin_current_tabID'
+          );
+          if (linkedin_current_tabID) {
+            chrome.tabs.remove(linkedin_current_tabID);
+            await LS.setItem('linkedin_current_tabID', false);
+          }
         });
       }
     }
@@ -183,7 +187,7 @@ chrome.runtime.onConnectExternal.addListener(function (port) {
     );
     console.log(request);
     if (request.message == 'Request Responses Intercepted') {
-      let extracted_info = await LS.getItem('Any-Website Extracted Info');
+      let extracted_info = await LS.getItem('Current Job Extracted Info');
       extracted_info.networkConnections = request.WithNetworkUrls;
       extracted_info.networkPayload = request.WithNetworkPayload;
       //Saved responses and send back to api to close job
@@ -205,6 +209,7 @@ async function start_linkedin_worker(url) {
   console.log('Opening url: ' + url);
   await LS.setItem('currently extracting', true);
   chrome.tabs.create({ url: url + '?CEaewtoron=12345' });
+  let intervalLoopCount = 0;
   return new Promise((resolve, reject) => {
     console.log('start_linkedin_worker()');
     var extractionInterval = setInterval(async function () {
@@ -224,6 +229,24 @@ async function start_linkedin_worker(url) {
       else {
         console.log('Company details not fetched yet, in loop...');
       }
+      intervalLoopCount++;
+      if (intervalLoopCount == 20) {
+        console.log(
+          '❌ 1 Minute elapsed and no data extracted, detected error, call to api next'
+        );
+        //If 1 minute have passed, it's 404 or error
+        clearInterval(extractionInterval);
+        let payload = {
+          uuid: await LS.getItem('CE_uuid'),
+          job_id: currentJob.jobId,
+          response: '1 Minute elapsed and no data extracted, detected error',
+          status: 'error',
+        };
+        API.update_job(payload).then(async () => {
+          await LS.setItem('is extraction completed?', true);
+        });
+        resolve('404 or Error while extracting data');
+      }
     }, 3000);
   });
 }
@@ -232,6 +255,7 @@ async function start_any_website_worker(url) {
   console.log('start_any_website_worker Opening url: ' + url);
   await LS.setItem('currently extracting', true);
   chrome.tabs.create({ url: url });
+  let intervalLoopCount = 0;
   return new Promise((resolve, reject) => {
     var extractionInterval = setInterval(async function () {
       //wait for getting email
@@ -249,6 +273,24 @@ async function start_any_website_worker(url) {
       //All Contacts LISTED
       else {
         console.log('Any-Website details not fetched yet, in loop...');
+        intervalLoopCount++;
+        if (intervalLoopCount == 20) {
+          console.log(
+            '❌ 1 Minute elapsed and no data extracted, detected error, call to api next'
+          );
+          //If 1 minute have passed, it's 404 or error
+          clearInterval(extractionInterval);
+          let payload = {
+            uuid: await LS.getItem('CE_uuid'),
+            job_id: currentJob.jobId,
+            response: '1 Minute elapsed and no data extracted, detected error',
+            status: 'error',
+          };
+          API.update_job(payload).then(async () => {
+            await LS.setItem('is extraction completed?', true);
+          });
+          resolve('404 or Error while extracting data');
+        }
       }
     }, 3000);
   });
@@ -276,7 +318,7 @@ async function start_crunchbase_worker(job) {
       //All Contacts LISTED
       else {
         console.log(
-          '🦄 Company details not fetched yet, Crunchbase in loop...'
+          '🕑 Company details not fetched yet, Crunchbase in loop...'
         );
       }
     }, 3000);
@@ -311,7 +353,7 @@ setTimeout(() => {
 async function checkJobInterval() {
   let interval_check_new_job = await LS.getItem('getJob_interval');
   console.log(interval_check_new_job);
-  checkJobLoop()
+  checkJobLoop();
   //Periodically check for new jobs if previous extraction loop is not running
   setInterval(async () => {
     if (!(await LS.getItem('currently extracting'))) checkJobLoop();
@@ -322,7 +364,7 @@ chrome.runtime.onInstalled.addListener(async (details) => {
   if (details.reason == 'install') {
     await LS.setItem('CE_uuid', uuidv1());
     await LS.setItem('getJob_interval', 1800000);
-    await LS.setItem('API_Endpoint', "https://api.saascafe.io/");
+    await LS.setItem('API_Endpoint', 'https://api.saascafe.io/');
     await LS.setItem('loggedIn_Apps', []);
     notify(
       'Mr Scraper Installed Successfully',

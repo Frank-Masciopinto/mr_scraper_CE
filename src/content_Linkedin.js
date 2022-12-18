@@ -157,9 +157,7 @@ async function startAutomation(rules) {
     response: extracted_info,
     status: status,
   };
-  API.update_job(payload).then(() => {
-    notify_background_extraction_completed();
-  });
+  notify_background_extraction_completed(payload);
 }
 
 function extract_querySelector(rule) {
@@ -218,11 +216,18 @@ async function extract_single_social_post(post_to_extract, extracted_posts) {
   return new Promise(function (resolve, reject) {
     console.log(post_to_extract);
     let post_type;
-    if (post_to_extract.querySelector("iframe")) post_type = 'slider';
-    else if (post_to_extract.querySelector("video")) post_type = 'video';
-    else if (post_to_extract.querySelector(".update-components-image__container")) post_type = 'image';
-    else if (post_to_extract.querySelector(".feed-shared-article__link-container")) post_type = 'link';
-    else if (post_to_extract.querySelector(".update-components-poll")) post_type = 'poll';
+    if (post_to_extract.querySelector('iframe')) post_type = 'slider';
+    else if (post_to_extract.querySelector('video')) post_type = 'video';
+    else if (
+      post_to_extract.querySelector('.update-components-image__container')
+    )
+      post_type = 'image';
+    else if (
+      post_to_extract.querySelector('.feed-shared-article__link-container')
+    )
+      post_type = 'link';
+    else if (post_to_extract.querySelector('.update-components-poll'))
+      post_type = 'poll';
     let caption = post_to_extract.querySelector('.update-components-text')
       ? post_to_extract.querySelector('.update-components-text').innerText
       : null_field;
@@ -297,9 +302,7 @@ async function extract_social_posts() {
     response: extracted_posts,
     status: 'success',
   };
-  API.update_job(payload).then(() => {
-    notify_background_extraction_completed();
-  });
+  notify_background_extraction_completed(payload);
 }
 
 async function scroll_to_last_job() {
@@ -323,8 +326,8 @@ async function scroll_to_last_job() {
   });
 }
 
-function notify_background_extraction_completed() {
-  chrome.runtime.sendMessage({ message: 'Extraction Completed' }, (res) => {});
+function notify_background_extraction_completed(payload) {
+  chrome.runtime.sendMessage({ message: 'Extraction Completed', payload: payload }, (res) => {});
 }
 
 async function fetch_page_jobs(extracted_jobs) {
@@ -397,9 +400,7 @@ async function extract_all_jobs() {
     response: extracted_jobs,
     status: status,
   };
-  API.update_job(payload).then(() => {
-    notify_background_extraction_completed();
-  });
+  notify_background_extraction_completed(payload);
 }
 //startAutomation();
 if (document.URL.includes('?CEaewtoron=12345')) {
@@ -436,9 +437,7 @@ if (document.URL.includes('?CEaewtoron=12345')) {
             response: [],
             status: 'Failure - No Jobs Found',
           };
-          API.update_job(payload).then(() => {
-            notify_background_extraction_completed();
-          });
+          notify_background_extraction_completed(payload);
         }
       );
     }

@@ -5,10 +5,16 @@ export var API = {
     console.log('Checking for new Jobs...');
     return new Promise(async function (resolve, reject) {
       let LS_loggedIn_Apps = await LS.getItem('loggedIn_Apps');
-      let params = "";
+      let params = '';
       for (let i = 0; i < LS_loggedIn_Apps.length; i++) {
-        params = params.concat('&',LS_loggedIn_Apps[i],'=true');
+        params = params.concat('&', LS_loggedIn_Apps[i], '=true');
       }
+      console.log(
+        (await LS.getItem('API_Endpoint')) +
+          API_ENDPOINTS.check_for_new_job +
+          (await LS.getItem('CE_uuid')) +
+          params
+      );
       fetch(
         (await LS.getItem('API_Endpoint')) +
           API_ENDPOINTS.check_for_new_job +
@@ -48,7 +54,8 @@ export var API = {
               resolve(res);
             }
           }
-        });
+        })
+        .catch((err) => console.log("❌ ", err));
     });
   },
   update_job: function (extracted_info) {
@@ -68,19 +75,6 @@ export var API = {
           console.log('Api JsonResponse: ');
           console.log(jsonResponse);
           resolve('success');
-          // if (jsonResponse.message) {
-          //   console.log('ERROR');
-          //   console.log(jsonResponse.message);
-          //   resolve("failure");
-          // } else {
-          //   if (jsonResponse.message) {
-          //     console.log('Job Updated Successfully');
-          //     resolve("success");
-          //   } else {
-          //     console.log('No jobs found...');
-          //     resolve("failure");
-          //   }
-          // }
         })
         .catch((e) => {
           console.log(e);
