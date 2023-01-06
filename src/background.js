@@ -81,22 +81,23 @@ chrome.runtime.onMessage.addListener(async (request, sender, sendResponse) => {
   } else if (
     request.message == 'What are the extraction rules for any-website?'
   ) {
-    // console.log('currentJob:');
-    // console.log(currentJob);
-    // sendResponse({
-    //   rules: JSON.parse(currentJob.rules),
-    //   jobId: currentJob.jobId,
-    // });
+    console.log('currentJob:');
+    console.log(currentJob);
     sendResponse({
-      rules: [
-        {
-          property: 'title',
-          rule: 'title',
-          type: 'dom',
-        },
-      ],
-      jobId: 666,
+      rules: JSON.parse(currentJob.rules),
+      jobId: currentJob.jobId,
     });
+    await LS.setItem('linkedin_current_tabID', sender.tab.id);
+    // sendResponse({
+    //   rules: [
+    //     {
+    //       property: 'title',
+    //       rule: 'title',
+    //       type: 'dom',
+    //     },
+    //   ],
+    //   jobId: 666,
+    // });
   } else if (request.message == 'What to extract on Crunchbase?') {
     console.log('currentJob:');
     console.log(currentJob);

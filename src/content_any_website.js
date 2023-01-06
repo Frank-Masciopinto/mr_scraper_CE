@@ -38,16 +38,10 @@ async function startAutomation(rules) {
   }
   status = 'success';
   console.log('Extracted info: \n', extracted_info);
-  let payload = {
-    uuid: uuid,
-    job_id: job_id,
-    response: extracted_info,
-    status: status,
-  };
   chrome.runtime.sendMessage(
     {
       message: 'Any-Website Extractor Completed the Job',
-      extractedInfo: payload,
+      extractedInfo: extracted_info,
     },
     (res) => {}
   );
@@ -78,21 +72,21 @@ function extract_regex_innerhtml(rule) {
   else return null_field;
 }
 
-
 setTimeout(() => {
-  if (document.URL.includes("?any-website")) {
-  chrome.runtime.sendMessage(
-    {
-      message: 'What are the extraction rules for any-website?',
-      scraper: 'Any Website',
-      url: document.URL,
-    },
-    (res) => {
-      console.log('Background response for jobs:');
-      console.log(res);
-      job_id = res.jobId;
-      startAutomation(res.rules);
-    }
-  );
+  if (document.URL.includes('?any-website')) {
+    chrome.runtime.sendMessage(
+      {
+        message: 'What are the extraction rules for any-website?',
+        scraper: 'Any Website',
+        url: document.URL,
+      },
+      (res) => {
+        console.log('Background response for jobs:');
+        console.log(res);
+        job_id = res.jobId;
+        scroll_to_bottom_page();
+        startAutomation(res.rules);
+      }
+    );
   }
 }, 1000);

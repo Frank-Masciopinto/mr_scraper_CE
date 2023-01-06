@@ -32,6 +32,7 @@ export async function click(btn) {
 }
 
 export function scroll_to_bottom_page() {
+  console.log('👇 Scroll_to_bottom_page');
   window.scrollBy({
     top: 10000,
     left: 100,
