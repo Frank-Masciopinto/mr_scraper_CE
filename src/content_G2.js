@@ -21,7 +21,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     } else sendResponse('Done');
   } else if (request.message == 'Network Requests Extracted Successfully') {
     check_if_pricing_and_features_are_needed(jobRules);
-    sendResponse('Done')
+    sendResponse('Done');
   }
 });
 
@@ -148,108 +148,111 @@ async function startAutomation(rules) {
   let extracted_info = {};
   let status;
   let uuid = await LS.getItem('uuid');
-  // try {
-  for (let i = 0; i < rules.length; i++) {
-    console.log('Rule: \n' + rules[i].property);
-    try {
-      if (
-        rules[i].type == 'dom' &&
-        !(
-          rules[i].property.includes('reviews_count') ||
-          rules[i].property.includes('year_founded')
-        )
-      ) {
-        console.log('Rule type: ' + rules[i].type);
-        let extracted_value = extract_querySelector(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
-      } else if (rules[i].type == 'regexp') {
-        console.log('Rule type: ' + rules[i].type);
-        let extracted_value = extract_regex(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
-      } else if (rules[i].property == 'videos') {
-        console.log('Rule property: ' + rules[i].property);
-        let extracted_value = extract_all_videos(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
-      } else if (rules[i].property == 'recap_votes') {
-        console.log('Rule property: ' + rules[i].property);
-        let extracted_value = extract_recap_votes(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
-      } else if (rules[i].property == 'official_downloads') {
-        console.log('Rule property: ' + rules[i].property);
-        let extracted_value = extract_official_downloads(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
-      } else if (rules[i].property == 'official_screenshots') {
-        console.log('Rule property: ' + rules[i].property);
-        let extracted_value = extract_official_screenshots(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
-      } else if (rules[i].type == 'regexp_innerHTML') {
-        console.log('Rule type: ' + rules[i].type);
-        let extracted_value = extract_regex_innerhtml(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
-      } else if (rules[i].property == 'year_founded') {
-        console.log('Rule type: ' + rules[i].type);
-        let extracted_value = extract_querySelector(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = parseInt(
-          extracted_value.replace('Year Founded', '')
-        );
-      } else if (rules[i].property == 'reviews_count') {
-        console.log('Rule type: ' + rules[i].type);
-        let extracted_value = extract_querySelector(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = parseInt(
-          extracted_value.match(/\d*/)[0]
-        );
-      } else if (rules[i].property == 'average_rating') {
-        console.log('Rule name: ' + rules[i].property);
-        let extracted_value = extract_average_rating(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
-      } else if (rules[i].property == 'video_reviews') {
-        console.log('Rule name: ' + rules[i].property);
-        let extracted_value = extract_video_reviews(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
-      } else if (rules[i].property == 'top_industries_represented') {
-        console.log('Rule name: ' + rules[i].property);
-        let extracted_value = extract_top_industries_represented(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
-      } else if (rules[i].property == 'categories_on_G2') {
-        console.log('Rule name: ' + rules[i].property);
-        let extracted_value = extract_categories_on_G2(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
-      } else if (rules[i].property == 'user_ratings') {
-        console.log('Rule name: ' + rules[i].property);
-        await click(document.querySelector(rules[i].rule));
-        let extracted_value = await extract_user_ratings(rules[i].rule);
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
-      } else if (rules[i].property == 'top_rated_alternatives') {
-        console.log('Rule name: ' + rules[i].property);
-        let extracted_value = await extract_top_rated_alternatives(
-          rules[i].rule
-        );
-        console.log('Extracted value: ' + extracted_value);
-        extracted_info[rules[i].property] = extracted_value;
+  try {
+    for (let i = 0; i < rules.length; i++) {
+      console.log('Rule: \n' + rules[i].property);
+      try {
+        if (
+          rules[i].type == 'dom' &&
+          !(
+            rules[i].property.includes('reviews_count') ||
+            rules[i].property.includes('year_founded')
+          )
+        ) {
+          console.log('Rule type: ' + rules[i].type);
+          let extracted_value = extract_querySelector(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        } else if (rules[i].type == 'regexp') {
+          console.log('Rule type: ' + rules[i].type);
+          let extracted_value = extract_regex(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        } else if (rules[i].property == 'videos') {
+          console.log('Rule property: ' + rules[i].property);
+          let extracted_value = extract_all_videos(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        } else if (rules[i].property == 'recap_votes') {
+          console.log('Rule property: ' + rules[i].property);
+          let extracted_value = extract_recap_votes(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        } else if (rules[i].property == 'official_downloads') {
+          console.log('Rule property: ' + rules[i].property);
+          let extracted_value = extract_official_downloads(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        } else if (rules[i].property == 'official_screenshots') {
+          console.log('Rule property: ' + rules[i].property);
+          let extracted_value = extract_official_screenshots(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        } else if (rules[i].type == 'regexp_innerHTML') {
+          console.log('Rule type: ' + rules[i].type);
+          let extracted_value = extract_regex_innerhtml(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        } else if (rules[i].property == 'year_founded') {
+          console.log('Rule type: ' + rules[i].type);
+          let extracted_value = extract_querySelector(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = parseInt(
+            extracted_value.replace('Year Founded', '')
+          );
+        } else if (rules[i].property == 'reviews_count') {
+          console.log('Rule type: ' + rules[i].type);
+          let extracted_value = extract_querySelector(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = parseInt(
+            extracted_value.match(/\d*/)[0]
+          );
+        } else if (rules[i].property == 'average_rating') {
+          console.log('Rule name: ' + rules[i].property);
+          let extracted_value = extract_average_rating(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        } else if (rules[i].property == 'video_reviews') {
+          console.log('Rule name: ' + rules[i].property);
+          let extracted_value = extract_video_reviews(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        } else if (rules[i].property == 'top_industries_represented') {
+          console.log('Rule name: ' + rules[i].property);
+          let extracted_value = extract_top_industries_represented(
+            rules[i].rule
+          );
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        } else if (rules[i].property == 'categories_on_G2') {
+          console.log('Rule name: ' + rules[i].property);
+          let extracted_value = extract_categories_on_G2(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        } else if (rules[i].property == 'user_ratings') {
+          console.log('Rule name: ' + rules[i].property);
+          await click(document.querySelector(rules[i].rule));
+          let extracted_value = await extract_user_ratings(rules[i].rule);
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        } else if (rules[i].property == 'top_rated_alternatives') {
+          console.log('Rule name: ' + rules[i].property);
+          let extracted_value = await extract_top_rated_alternatives(
+            rules[i].rule
+          );
+          console.log('Extracted value: ' + extracted_value);
+          extracted_info[rules[i].property] = extracted_value;
+        }
+      } catch {
+        extracted_info[rules[i].property] = null_field;
       }
-    } catch {
-      extracted_info[rules[i].property] = null_field;
     }
+    status = 'success';
+  } catch (e) {
+    console.log('ERROR: ' + e.message);
+    extracted_info = e;
+    status = 'failure';
   }
-  status = 'success';
-  // } catch (e) {
-  //   console.log('ERROR: ' + e.message);
-  //   status = 'failure';
-  // }
   console.log('Extracted info: \n', extracted_info);
   let payload = {
     uuid: await LS.getItem('CE_uuid'),
@@ -593,7 +596,7 @@ if (
       console.log('Background response for jobs:');
       console.log(res);
       job_id = res.jobId;
-      jobRules = res.rules
+      jobRules = res.rules;
       startAutomation(res.rules);
     }
   );

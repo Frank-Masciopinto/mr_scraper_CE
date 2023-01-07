@@ -147,6 +147,7 @@ async function startAutomation(rules) {
     }
     status = 'success';
   } catch (e) {
+    extracted_info = e;
     console.log('ERROR: ' + e.message);
     status = 'failure';
   }
@@ -321,7 +322,10 @@ async function scroll_to_last_job() {
 }
 
 function notify_background_extraction_completed(payload) {
-  chrome.runtime.sendMessage({ message: 'Extraction Completed', payload: payload }, (res) => {});
+  chrome.runtime.sendMessage(
+    { message: 'Extraction Completed', payload: payload },
+    (res) => {}
+  );
 }
 
 async function fetch_page_jobs(extracted_jobs) {
